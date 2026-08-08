@@ -15,11 +15,13 @@ import MaterialsPage from './pages/MaterialsPage'
 import CalculatorsPage from './pages/CalculatorsPage'
 import CommissionsPage from './pages/CommissionsPage'
 import DemandPage from './pages/DemandPage'
+import { ClientModeProvider } from './components/ClientModeContext'
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<Layout />}>
+    <ClientModeProvider>
+      <Routes>
+        <Route element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="properties" element={<Properties />} />
         <Route path="properties/new" element={<PropertyForm />} />
@@ -37,7 +39,8 @@ export default function App() {
         <Route path="demand" element={<DemandPage />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+        </Route>
+      </Routes>
+    </ClientModeProvider>
   )
 }

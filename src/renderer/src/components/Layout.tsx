@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import Logo from './Logo'
 import QuickAddMenu from './QuickAddMenu'
+import { useClientMode } from './ClientModeContext'
 import { fileUrl, onBrandingChanged, notifyBrandingChanged, saveBrandingFile } from '../lib/branding'
 
 const navGroups = [
@@ -66,6 +67,7 @@ function pageTitle(pathname: string): string {
 
 export default function Layout() {
   const location = useLocation()
+  const clientMode = useClientMode()
   const [officeName, setOfficeName] = useState('المهندس')
   const [pageBg, setPageBg] = useState<string | null>(null)
 
@@ -99,8 +101,8 @@ export default function Layout() {
   }
 
   return (
-    <div className="app-shell flex h-screen">
-      <aside className="app-sidebar w-56 shrink-0 bg-shell-950 text-white flex flex-col border-l border-line-dark">
+    <div className={`app-shell flex h-screen ${clientMode.active ? 'client-presentation-active' : ''}`}>
+      {!clientMode.active && <aside className="app-sidebar w-56 shrink-0 bg-shell-950 text-white flex flex-col border-l border-line-dark">
         <div className="px-5 py-5 border-b border-white/8">
           <div className="flex items-center gap-3">
             <div className="relative group">
@@ -141,15 +143,26 @@ export default function Layout() {
           ))}
         </nav>
         <div className="p-4 text-xs text-slate-500 border-t border-white/10">الإصدار 1.0</div>
-      </aside>
+      </aside>}
       <div className="min-w-0 flex-1 flex flex-col">
-        <header className="app-topbar">
+        {clientMode.active ? (
+          <header className="client-presentation-topbar">
+            <div className="flex items-center gap-3">
+              <Logo size={34} />
+              <div>
+                <div className="text-sm font-semibold text-white">{officeName}</div>
+                <div className="text-[10px] tracking-[.12em] text-gold-300/75">PROPERTY PRESENTATION</div>
+              </div>
+            </div>
+            <button onClick={clientMode.exit} className="client-mode-exit">خروج من وضع العميل</button>
+          </header>
+        ) : <header className="app-topbar">
           <div>
             <div className="type-label text-ink-900">{pageTitle(location.pathname)}</div>
             <div className="type-meta">نظام إدارة المكتب العقاري</div>
           </div>
           <QuickAddMenu premium />
-        </header>
+        </header>}
         <main
         className="workspace-surface min-h-0 flex-1 overflow-y-auto"
         style={

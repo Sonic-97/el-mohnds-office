@@ -10,7 +10,6 @@ import {
   Share2,
   FileText,
   Eye,
-  EyeOff,
   ExternalLink,
   Ruler,
   DoorOpen,
@@ -33,13 +32,15 @@ import {
 } from '../lib/constants'
 import { ScoreBadge, MatchReasons } from '../components/MatchScore'
 import PropertyLocationContext from '../components/zagazig/PropertyLocationContext'
+import ClientPropertyPresentation from '../components/ClientPropertyPresentation'
+import { useClientMode } from '../components/ClientModeContext'
 
 export default function PropertyDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
   const [prop, setProp] = useState<PropertyDetail | null>(null)
-  const [clientMode, setClientMode] = useState(false)
+  const clientMode = useClientMode()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [clientMatches, setClientMatches] = useState<ClientMatch[]>([])
   const [quickMatchCount, setQuickMatchCount] = useState<number | null>(null)
@@ -69,8 +70,7 @@ export default function PropertyDetail() {
       `السعر: ${formatPrice(p.price)}`,
       `المساحة: ${formatArea(p.area)}`,
       `الموقع: ${[p.zone, p.city, p.governorate].filter(Boolean).join(' - ')}`,
-      p.street ? `الشارع: ${p.street}` : '',
-      p.notes ? p.notes : ''
+      p.street ? `الشارع: ${p.street}` : ''
     ].filter(Boolean)
     const url = `https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`
     window.open(url, '_blank')
@@ -89,6 +89,8 @@ export default function PropertyDetail() {
 
   const images = p.files.filter((f) => f.kind === 'image')
   const otherFiles = p.files.filter((f) => f.kind !== 'image')
+
+  if (clientMode.active) return <ClientPropertyPresentation property={p} onShare={shareWhatsApp} />
 
   function InfoRow({ label, value }: { label: string; value: string }) {
     return (
@@ -110,13 +112,10 @@ export default function PropertyDetail() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setClientMode((v) => !v)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm ${
-              clientMode ? 'bg-violet-100 text-violet-700' : 'bg-slate-800 text-white hover:bg-slate-900'
-            }`}
+            onClick={clientMode.enter}
+            className="btn btn-premium"
           >
-            {clientMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            {clientMode ? 'وضع المكتب' : 'وضع العميل'}
+            <Eye className="w-4 h-4" /> عرض للعميل
           </button>
           {(p.status === 'sold' || p.status === 'rented') && (
             <Link
@@ -147,13 +146,7 @@ export default function PropertyDetail() {
         </div>
       </div>
 
-      {clientMode && (
-        <div className="bg-violet-50 border border-violet-200 text-violet-700 text-sm rounded-lg px-4 py-3 mb-6">
-          وضع العرض للعميل — تم إخفاء معلومات المالك والملاحظات الداخلية وبيانات المطابقة.
-        </div>
-      )}
-
-      {quickMatchCount != null && !clientMode && (
+      {quickMatchCount != null && (
         <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 mb-6 flex items-center justify-between">
           <span className="text-sm">
             يوجد {quickMatchCount.toLocaleString('ar-EG')} عملاء قد يناسبهم هذا العقار
@@ -203,7 +196,7 @@ export default function PropertyDetail() {
             </div>
           </div>
 
-          {!clientMode && p.documents.length > 0 && (
+          {p.documents.length > 0 && (
             <div className="surface-card order-5 p-6">
               <h2 className="font-bold mb-4">المستندات</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -279,7 +272,7 @@ export default function PropertyDetail() {
             )}
           </div>
 
-          {!clientMode && (
+          {
             <div className="internal-office-panel p-6">
               <h2 className="font-bold mb-4 flex items-center gap-2">
                 <UserIcon className="w-5 h-5 text-navy-700" /> بيانات المالك
@@ -308,9 +301,9 @@ export default function PropertyDetail() {
                 </button>
               )}
             </div>
-          )}
+          }
 
-          {!clientMode && p.notes && (
+          {p.notes && (
             <div className="internal-office-panel p-6">
               <h2 className="font-bold mb-3 flex items-center gap-2">
                 <StickyNote className="w-5 h-5 text-amber-500" /> ملاحظات داخلية
@@ -326,7 +319,7 @@ export default function PropertyDetail() {
         </div>
       </div>
 
-      {!clientMode && (
+      {
         <div id="potential-clients" className="internal-office-section p-6 mt-6">
           <div className="flex items-center gap-2 mb-4">
             <Users className="w-5 h-5 text-gold-600" />
@@ -374,7 +367,7 @@ export default function PropertyDetail() {
             </div>
           )}
         </div>
-      )}
+      }
 
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6">

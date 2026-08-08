@@ -15,7 +15,6 @@ import {
 } from 'react-leaflet'
 import {
   Eye,
-  EyeOff,
   RefreshCw,
   Search,
   Map as MapIcon,
@@ -44,6 +43,7 @@ import SidePanel, { type ZagazigPanelMode } from '../components/zagazig/ZagazigS
 import ZagazigLegend from '../components/zagazig/ZagazigLegend'
 import AreaManager from '../components/zagazig/AreaManager'
 import CompareModal from '../components/CompareModal'
+import { useClientMode } from '../components/ClientModeContext'
 
 const ZAGAZIG_CENTER: [number, number] = [30.5877, 31.502]
 const ZAGAZIG_ZOOM = 13
@@ -108,6 +108,7 @@ function LayerButton({
 export default function ZagazigMap() {
   const [searchParams] = useSearchParams()
   const location = useLocation()
+  const presentationMode = useClientMode()
 
   const [poiData, setPoiData] = useState<ZagazigPoiData | null>(null)
   const [poiLoading, setPoiLoading] = useState(true)
@@ -127,7 +128,7 @@ export default function ZagazigMap() {
     around: false
   })
   const [serviceFilter, setServiceFilter] = useState('all')
-  const [clientMode, setClientMode] = useState(false)
+  const clientMode = presentationMode.active
   const [matchClient, setMatchClient] = useState<Client | null>(null)
   const [matchScores, setMatchScores] = useState<Record<number, number>>({})
 
@@ -151,6 +152,13 @@ export default function ZagazigMap() {
   const [searchQuery, setSearchQuery] = useState('')
 
   const flyOnce = useRef(false)
+
+  useEffect(() => {
+    if (!clientMode) return
+    setShowAreaManager(false)
+    setDrawing(null)
+    setMatchClient(null)
+  }, [clientMode])
 
   const load = useCallback(() => {
     window.api.zmap.getPoiData().then(setPoiData).catch(() => setPoiError('تعذر تحميل بيانات الخدمات')).finally(() => setPoiLoading(false))
@@ -398,28 +406,27 @@ export default function ZagazigMap() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setClientMode((v) => !v)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm ${
-              clientMode ? 'bg-violet-100 text-violet-700' : 'bg-slate-800 text-white hover:bg-slate-900'
-            }`}
-            title="إخفاء بيانات المكتب الداخلية عند العرض للعميل"
-          >
-            {clientMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            {clientMode ? 'وضع المكتب' : 'وضع العميل'}
-          </button>
-          <button
-            onClick={() => setShowAreaManager(true)}
-            className="flex items-center gap-2 bg-navy-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-navy-900"
-          >
-            <MapIcon className="w-4 h-4" /> إدارة المناطق
-          </button>
-          <button
-            onClick={refreshPoi}
-            className="flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${poiLoading ? 'animate-spin' : ''}`} /> تحديث الخدمات
-          </button>
+          {!clientMode && (
+            <button onClick={presentationMode.enter} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm bg-slate-800 text-white hover:bg-slate-900" title="إخفاء بيانات المكتب الداخلية عند العرض للعميل">
+              <Eye className="w-4 h-4" /> عرض للعميل
+            </button>
+          )}
+          {!clientMode && (
+            <>
+              <button
+                onClick={() => setShowAreaManager(true)}
+                className="flex items-center gap-2 bg-navy-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-navy-900"
+              >
+                <MapIcon className="w-4 h-4" /> إدارة المناطق
+              </button>
+              <button
+                onClick={refreshPoi}
+                className="flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${poiLoading ? 'animate-spin' : ''}`} /> تحديث الخدمات
+              </button>
+            </>
+          )}
           <button
             onClick={() => setFly({ lat: ZAGAZIG_CENTER[0], lng: ZAGAZIG_CENTER[1], zoom: ZAGAZIG_ZOOM, token: Date.now() })}
             className="flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50"
@@ -482,7 +489,7 @@ export default function ZagazigMap() {
           )}
         </div>
 
-        <select
+        {!clientMode && <select
           value={matchClient?.id ?? ''}
           onChange={(e) => {
             const id = Number(e.target.value)
@@ -496,7 +503,7 @@ export default function ZagazigMap() {
               {c.name} {c.area ? `- ${c.area}` : ''}
             </option>
           ))}
-        </select>
+        </select>}
 
         {layers.services && (
           <select
@@ -600,7 +607,12 @@ export default function ZagazigMap() {
 
           {layers.properties &&
             mappedProperties.map((p) => (
-              <Marker key={p.id} position={[p.latitude as number, p.longitude as number]} icon={pIcon(p)}>
+              <Marker
+                key={p.id}
+                position={[p.latitude as number, p.longitude as number]}
+                icon={pIcon(p)}
+                opacity={clientMode && selectedProperty && selectedProperty.id !== p.id && !compareSet.has(p.id) ? 0.35 : 1}
+              >
                 <Popup>
                   <div className="min-w-[220px]">
                     <div className="flex items-center justify-between gap-2">
@@ -660,7 +672,7 @@ export default function ZagazigMap() {
             </>
           )}
 
-          {drawing && (
+          {!clientMode && drawing && (
             <>
               {drawing.points.length >= 2 && (
                 <Polyline positions={drawing.points.map((p) => [p.lat, p.lon])} pathOptions={{ color: '#d4af37', weight: 2 }} />
@@ -696,7 +708,7 @@ export default function ZagazigMap() {
           clientMode={clientMode}
         />
 
-        {drawing && (
+        {!clientMode && drawing && (
           <div className="absolute top-16 inset-x-0 z-[800] flex justify-center pointer-events-none">
             <div className="bg-white rounded-xl shadow-xl p-4 w-96 pointer-events-auto">
               <div className="flex items-center justify-between mb-2">
@@ -740,7 +752,7 @@ export default function ZagazigMap() {
         )}
       </div>
 
-      {showAreaManager && (
+      {!clientMode && showAreaManager && (
         <AreaManager
           areas={areas}
           onAdd={() => startDrawing(null)}
