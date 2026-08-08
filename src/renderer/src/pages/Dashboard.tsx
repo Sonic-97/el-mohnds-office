@@ -1,37 +1,27 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, BadgeCheck, Building2, CalendarClock, ChartColumn, CheckCircle2, Coins, Home, KeyRound, LandPlot, Link2, Package, Plus, Users } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, Building2, CalendarClock, ChartColumn, CheckCircle2, Coins, Home, KeyRound, LandPlot, Link2, Package, Plus, Target, Users } from 'lucide-react'
 import type { Client, CommissionSummary, ConstructionMaterial, DashboardStats, DemandAnalytics, FollowUpStats, MarketArea, MatchOpportunityStats, Property } from '@shared/types'
 import PropertyCard from '../components/PropertyCard'
 import { EmptyState } from '../components/ui'
-import { fileUrl, loadBranding, onBrandingChanged } from '../lib/branding'
 import { fmtM2 } from '../lib/market'
+import { useAuth } from '../components/AuthContext'
 
-function DashboardHeader() {
-  const [banner, setBanner] = useState<string | null>(null)
-  useEffect(() => {
-    let active = true
-    const load = async () => {
-      const branding = await loadBranding()
-      if (active) setBanner(fileUrl(branding.banner))
-    }
-    load()
-    const off = onBrandingChanged(load)
-    return () => { active = false; off() }
-  }, [])
+function DashboardHeader({ username }: { username: string }) {
   return (
-    <section className="dashboard-hero" style={banner ? { backgroundImage: `linear-gradient(90deg,rgba(7,16,28,.96),rgba(7,16,28,.72)),url("${banner}")` } : undefined}>
-      <div className="relative z-10">
-        <div className="mb-2 text-[11px] font-medium tracking-[.18em] text-gold-300">OFFICE INTELLIGENCE</div>
-        <h1 className="type-display text-white">المهندس للتطوير العقاري</h1>
-        <p className="mt-2 text-sm text-slate-300">نظرة شاملة على المكتب والسوق والفرص الحالية</p>
+    <section className="dashboard-hero">
+      <div>
+        <div className="dashboard-greeting-mark">👋</div>
+        <h1>مرحباً بك، {username || 'المستخدم'}</h1>
+        <p>إدارة ذكية لمكتبك العقاري</p>
       </div>
-      <Link to="/properties/new" className="btn btn-premium relative z-10"><Plus className="h-4 w-4" strokeWidth={1.75} /> إضافة عقار</Link>
+      <div className="dashboard-hero-caption">OFFICE INTELLIGENCE</div>
     </section>
   )
 }
 
 export default function Dashboard() {
+  const auth = useAuth()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [recent, setRecent] = useState<Property[]>([])
   const [recentClients, setRecentClients] = useState<Client[]>([])
@@ -67,7 +57,7 @@ export default function Dashboard() {
 
   const metrics = stats ? [
     { label: 'إجمالي العقارات', value: stats.totalProperties, icon: Building2, to: '/properties', primary: true },
-    { label: 'العملاء', value: stats.totalClients, icon: Users, to: '/clients', primary: true },
+    { label: 'العملاء', value: stats.totalClients, icon: Users, to: '/clients' },
     { label: 'الأراضي', value: stats.totalLands, icon: LandPlot, to: '/properties?type=أرض' },
     { label: 'الشقق', value: stats.totalApartments, icon: Home, to: '/properties?type=شقة' },
     { label: 'متاح', value: stats.available, icon: CheckCircle2, to: '/properties?status=available' },
@@ -86,14 +76,14 @@ export default function Dashboard() {
     { label: 'فرص المطابقة', value: (matches?.propertiesWithClients ?? 0) + (matches?.clientsWithProperties ?? 0), meta: `${matches?.propertiesWithClients ?? 0} عقار · ${matches?.clientsWithProperties ?? 0} عميل`, icon: Link2, to: '/matches' },
     { label: 'متابعات اليوم', value: (followups?.dueToday ?? 0) + (followups?.overdue ?? 0), meta: `${followups?.dueToday ?? 0} اليوم · ${followups?.overdue ?? 0} متأخرة`, icon: CalendarClock, to: '/clients?followup=1' },
     { label: 'عمولات الشهر', value: commissions?.monthExpected ?? 0, meta: `${(commissions?.monthOutstanding ?? 0).toLocaleString('ar-EG')} ج.م مستحقة`, suffix: 'ج.م', icon: Coins, to: '/commissions' },
-    { label: 'طلب العملاء', value: demand?.withRequirements ?? 0, meta: `${recentClients.length} من أحدث العملاء معروضون`, icon: ChartColumn, to: '/demand' }
+    { label: 'طلب العملاء', value: demand?.withRequirements ?? 0, meta: `${recentClients.length} من أحدث العملاء معروضون`, icon: ChartColumn, to: '/demand' },
+    { label: 'عقارات محجوزة', value: stats?.reserved ?? 0, meta: 'تحتاج متابعة حالة الحجز', icon: Target, to: '/properties?status=reserved' }
   ]
 
   return (
     <div className="page-presentation dashboard-page p-6 lg:p-8">
-      <DashboardHeader />
-      <section className="dashboard-section">
-        <div className="dashboard-section-heading"><div><h2 className="type-section-title">نظرة المكتب</h2><p className="type-meta mt-1">المخزون والعملاء وحالة العقارات</p></div></div>
+      <DashboardHeader username={auth.username} />
+      <section className="dashboard-section dashboard-overview-section">
         <div className="dashboard-metrics">
           {metrics.map(({ label, value, icon: Icon, to, primary }) => (
             <Link key={label} to={to} className={`dashboard-metric ${primary ? 'dashboard-metric-primary' : ''}`}>
@@ -118,7 +108,7 @@ export default function Dashboard() {
         </div> : <div className="py-8 text-center text-sm text-slate-400">لا توجد بيانات سوق أو مواد مسجلة حالياً.</div>}
       </section>
       <section className="dashboard-section">
-        <div className="dashboard-section-heading"><div><h2 className="type-section-title">نشاط المكتب</h2><p className="type-meta mt-1">المتابعات والفرص والمؤشرات المالية</p></div></div>
+        <div className="dashboard-section-heading"><div><h2 className="type-section-title">مركز العمل اليوم</h2><p className="type-meta mt-1">أولويات تحتاج متابعتك الآن</p></div></div>
         <div className="dashboard-activity-grid">
           {activity.map(({ label, value, meta, suffix, icon: Icon, to }) => <Link key={label} to={to} className="dashboard-activity-card">
             <div className="flex items-center justify-between"><span className="text-sm font-medium text-ink-900">{label}</span><Icon className="h-4 w-4 text-muted-500" strokeWidth={1.75} /></div>

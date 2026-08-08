@@ -157,6 +157,26 @@ export interface SettingsMap {
   [key: string]: string
 }
 
+export interface BackupInfo {
+  filePath: string
+  filename: string
+  createdAt: string
+  filesIncluded: number
+}
+
+export interface SelectedBackup {
+  filePath: string
+  createdAt: string
+  appVersion: string
+  filesIncluded: number
+}
+
+export interface AuthStatus {
+  hasAccount: boolean
+  authenticated: boolean
+  username: string | null
+}
+
 export interface MapPoint {
   id: number
   name: string

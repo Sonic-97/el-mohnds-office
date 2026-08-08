@@ -16,11 +16,19 @@ import CalculatorsPage from './pages/CalculatorsPage'
 import CommissionsPage from './pages/CommissionsPage'
 import DemandPage from './pages/DemandPage'
 import { ClientModeProvider } from './components/ClientModeContext'
+import { useAuth } from './components/AuthContext'
+import AuthScreen from './components/AuthScreen'
 
 export default function App() {
+  const auth = useAuth()
+  if (auth.screen === 'loading') return <div className="auth-loading" aria-label="جارٍ تحميل النظام" />
+  if (!auth.officeMounted) return <AuthScreen />
+
   return (
-    <ClientModeProvider>
-      <Routes>
+    <>
+      <div className={auth.screen === 'locked' ? 'hidden' : 'contents'} aria-hidden={auth.screen === 'locked'}>
+        <ClientModeProvider>
+          <Routes>
         <Route element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="properties" element={<Properties />} />
@@ -40,7 +48,10 @@ export default function App() {
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
-      </Routes>
-    </ClientModeProvider>
+          </Routes>
+        </ClientModeProvider>
+      </div>
+      {auth.screen === 'locked' && <AuthScreen />}
+    </>
   )
 }

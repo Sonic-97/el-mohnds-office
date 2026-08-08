@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Building2, MapPin, Ruler, Trash2 } from 'lucide-react'
+import { MapPin, Ruler, Trash2 } from 'lucide-react'
 import type { Property, PropertyFile } from '@shared/types'
 import { STATUS_LABELS, STATUS_COLORS, formatPrice, formatArea } from '../lib/constants'
+import propertyFallbacks from '../assets/property-fallbacks.png'
 
 interface PropertyCardProps {
   property: Property
@@ -24,17 +25,26 @@ export default function PropertyCard({ property, selected, onToggleSelect, selec
     return () => { active = false }
   }, [property.id])
 
+  const fallbackPosition = property.type.includes('أرض')
+    ? '0% 100%'
+    : property.type.includes('شقة') || property.type.includes('عمارة')
+      ? '100% 0%'
+      : property.type.includes('محل') || property.type.includes('مكتب') || property.type.includes('تجاري')
+        ? '100% 100%'
+        : '0% 0%'
+
   return (
     <article className={`property-listing-card group ${selected ? 'property-listing-selected' : ''}`}>
       <Link to={`/properties/${property.id}`} className="property-card-media" tabIndex={-1} aria-hidden="true">
         {image ? (
           <img src={`file:///${image.path.replace(/\\/g, '/')}`} alt="" className="property-card-image" />
         ) : (
-          <div className="property-card-placeholder">
-            <Building2 className="h-9 w-9" strokeWidth={1.35} />
-            <span>{property.type || 'عقار'}</span>
-            <small>المهندس للتطوير العقاري</small>
-          </div>
+          <div
+            className="property-card-placeholder property-card-photo-fallback"
+            style={{ backgroundImage: `url(${propertyFallbacks})`, backgroundPosition: fallbackPosition }}
+            role="img"
+            aria-label={`صورة افتراضية لنوع ${property.type || 'عقار'}`}
+          />
         )}
         <div className="property-card-badges">
           <span className="badge badge-neutral">{property.type || 'عقار'}</span>

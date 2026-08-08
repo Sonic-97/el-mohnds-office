@@ -6,9 +6,24 @@ import type {
 } from '../shared/types'
 
 const api = {
+  auth: {
+    status: (): Promise<import('../shared/types').AuthStatus> => ipcRenderer.invoke('auth:status'),
+    setup: (username: string, password: string): Promise<{ username: string }> => ipcRenderer.invoke('auth:setup', username, password),
+    login: (username: string, password: string): Promise<{ success: boolean; username?: string }> => ipcRenderer.invoke('auth:login', username, password),
+    lock: () => ipcRenderer.invoke('auth:lock'),
+    logout: () => ipcRenderer.invoke('auth:logout'),
+    changePassword: (currentPassword: string, newPassword: string) => ipcRenderer.invoke('auth:changePassword', currentPassword, newPassword)
+  },
   settings: {
     getAll: () => ipcRenderer.invoke('settings:getAll'),
     set: (key: string, value: string) => ipcRenderer.invoke('settings:set', key, value)
+  },
+  backup: {
+    getStatus: (): Promise<import('../shared/types').BackupInfo | null> => ipcRenderer.invoke('backup:getStatus'),
+    create: (): Promise<import('../shared/types').BackupInfo | null> => ipcRenderer.invoke('backup:create'),
+    selectRestore: (): Promise<import('../shared/types').SelectedBackup | null> => ipcRenderer.invoke('backup:selectRestore'),
+    restore: (filePath: string): Promise<{ restored: boolean; safetyBackup: string }> => ipcRenderer.invoke('backup:restore', filePath),
+    openLocation: (filePath: string) => ipcRenderer.invoke('backup:openLocation', filePath)
   },
   types: {
     list: () => ipcRenderer.invoke('types:list'),

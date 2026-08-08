@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, Save, Building2, ListPlus, Image, Upload, Percent } from 'lucide-react'
-import type { PropertyType, CustomField, SettingsMap } from '@shared/types'
+import { Plus, Trash2, Save, Building2, ListPlus, Image, Upload, Percent, Archive, RotateCcw, FolderOpen, ShieldCheck, KeyRound } from 'lucide-react'
+import type { PropertyType, CustomField, SettingsMap, BackupInfo, SelectedBackup } from '@shared/types'
 import Modal from '../components/Modal'
 import { fileUrl, notifyBrandingChanged, saveBrandingFile } from '../lib/branding'
+import { AUTO_LOCK_SETTINGS_EVENT } from '../components/AuthContext'
 
 const inputCls = 'control-input'
 const labelCls = 'field-label'
@@ -15,6 +16,13 @@ export default function Settings() {
   const [newField, setNewField] = useState({ name: '', fieldType: 'text' as 'text' | 'number' })
   const [modal, setModal] = useState<null | 'type' | 'field'>(null)
   const [message, setMessage] = useState('')
+  const [backupInfo, setBackupInfo] = useState<BackupInfo | null>(null)
+  const [selectedBackup, setSelectedBackup] = useState<SelectedBackup | null>(null)
+  const [backupBusy, setBackupBusy] = useState<'create' | 'restore' | null>(null)
+  const [backupMessage, setBackupMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
+  const [passwordModal, setPasswordModal] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' })
+  const [passwordError, setPasswordError] = useState('')
   const [branding, setBranding] = useState<{
     logo: string | null
     banner: string | null
@@ -26,6 +34,7 @@ export default function Settings() {
     window.api.types.list().then(setTypes)
     window.api.customFields.list().then(setFields)
     window.api.branding.get().then(setBranding)
+    window.api.backup.getStatus().then(setBackupInfo)
   }
 
   useEffect(load, [])
@@ -56,6 +65,7 @@ export default function Settings() {
       await window.api.settings.set(key, value)
     }
     setMessage('تم حفظ الإعدادات')
+    window.dispatchEvent(new Event(AUTO_LOCK_SETTINGS_EVENT))
     setTimeout(() => setMessage(''), 2000)
   }
 
@@ -80,6 +90,76 @@ export default function Settings() {
       window.api.customFields.list().then(setFields)
     } catch (e) {
       alert(String(e))
+    }
+  }
+
+  function backupError(error: unknown): string {
+    const value = String(error)
+    if (value.includes('UNSUPPORTED_BACKUP_VERSION')) return 'إصدار النسخة الاحتياطية غير مدعوم'
+    if (value.includes('INVALID_BACKUP') || value.includes('MANIFEST') || value.includes('DATABASE') || value.includes('ARCHIVE') || value.includes('ASSOCIATED_FILE')) {
+      return 'ملف النسخة الاحتياطية غير صالح أو غير مكتمل'
+    }
+    return 'تعذر إتمام العملية. لم يتم تغيير بيانات المكتب.'
+  }
+
+  async function createBackup() {
+    setBackupBusy('create')
+    setBackupMessage(null)
+    try {
+      const result = await window.api.backup.create()
+      if (result) {
+        setBackupInfo(result)
+        setBackupMessage({ kind: 'success', text: 'تم إنشاء النسخة الاحتياطية بنجاح' })
+      }
+    } catch (error) {
+      setBackupMessage({ kind: 'error', text: backupError(error) })
+    } finally {
+      setBackupBusy(null)
+    }
+  }
+
+  async function chooseRestore() {
+    setBackupMessage(null)
+    try {
+      const selected = await window.api.backup.selectRestore()
+      if (selected) setSelectedBackup(selected)
+    } catch (error) {
+      setBackupMessage({ kind: 'error', text: backupError(error) })
+    }
+  }
+
+  async function restoreBackup() {
+    if (!selectedBackup) return
+    setBackupBusy('restore')
+    try {
+      await window.api.backup.restore(selectedBackup.filePath)
+      setBackupMessage({ kind: 'success', text: 'تمت استعادة البيانات بنجاح. سيتم إعادة تشغيل البرنامج.' })
+      setSelectedBackup(null)
+    } catch (error) {
+      setBackupMessage({ kind: 'error', text: backupError(error) })
+      setSelectedBackup(null)
+      setBackupBusy(null)
+    }
+  }
+
+  async function changePassword() {
+    setPasswordError('')
+    if (passwordForm.next.length < 6) {
+      setPasswordError('يجب أن تتكون كلمة المرور الجديدة من 6 أحرف على الأقل')
+      return
+    }
+    if (passwordForm.next !== passwordForm.confirm) {
+      setPasswordError('كلمتا المرور الجديدة غير متطابقتين')
+      return
+    }
+    try {
+      await window.api.auth.changePassword(passwordForm.current, passwordForm.next)
+      setPasswordForm({ current: '', next: '', confirm: '' })
+      setPasswordModal(false)
+      setMessage('تم تغيير كلمة المرور بنجاح')
+      setTimeout(() => setMessage(''), 2500)
+    } catch {
+      setPasswordError('كلمة المرور الحالية غير صحيحة')
     }
   }
 
@@ -131,6 +211,66 @@ export default function Settings() {
           >
             <Save className="w-4 h-4" /> حفظ الإعدادات
           </button>
+        </div>
+      </section>
+
+      <section className="surface-card p-6 mb-6">
+        <h2 className="font-bold mb-2 flex items-center gap-2">
+          <Archive className="w-5 h-5 text-gold-600" /> النسخ الاحتياطي واستعادة البيانات
+        </h2>
+        <p className="text-sm text-gray-500 mb-5">تحتوي النسخة الاحتياطية على بيانات المكتب والعقارات والعملاء والملفات المرتبطة بها.</p>
+        <div className="rounded-lg border border-line-light bg-ivory-100 px-4 py-3 mb-4">
+          <span className="text-xs text-gray-500">آخر نسخة احتياطية:</span>
+          <div className="font-medium text-navy-900 mt-1">
+            {backupInfo ? new Date(backupInfo.createdAt).toLocaleString('ar-EG') : 'لم يتم إنشاء نسخة بعد'}
+          </div>
+          {backupInfo && <div className="text-xs text-gray-500 mt-1" dir="ltr">{backupInfo.filename}</div>}
+        </div>
+        {backupMessage && (
+          <div className={`rounded-lg border px-4 py-3 mb-4 text-sm ${backupMessage.kind === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+            <div>{backupMessage.text}</div>
+            {backupMessage.kind === 'success' && backupInfo && (
+              <div className="mt-2 text-xs space-y-1">
+                <div>{backupInfo.filename}</div>
+                <div>{new Date(backupInfo.createdAt).toLocaleString('ar-EG')}</div>
+                <div className="truncate" dir="ltr">{backupInfo.filePath}</div>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="flex flex-wrap gap-3">
+          <button onClick={createBackup} disabled={backupBusy != null} className="btn btn-premium">
+            <Archive className="w-4 h-4" /> {backupBusy === 'create' ? 'جارٍ إنشاء النسخة...' : 'إنشاء نسخة احتياطية'}
+          </button>
+          <button onClick={chooseRestore} disabled={backupBusy != null} className="btn btn-secondary">
+            <RotateCcw className="w-4 h-4" /> استعادة نسخة احتياطية
+          </button>
+          {backupInfo && (
+            <button onClick={() => window.api.backup.openLocation(backupInfo.filePath)} className="btn btn-tertiary">
+              <FolderOpen className="w-4 h-4" /> فتح مكان النسخة
+            </button>
+          )}
+        </div>
+      </section>
+
+      <section className="surface-card p-6 mb-6">
+        <h2 className="font-bold mb-2 flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-gold-600" /> الأمان</h2>
+        <p className="text-sm text-gray-500 mb-5">تحكم في كلمة المرور وقفل النظام تلقائياً عند ترك الجهاز دون استخدام.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+          <div>
+            <label className={labelCls}>قفل تلقائي بعد عدم الاستخدام</label>
+            <select className={inputCls} value={settings.autoLockMinutes ?? '15'} onChange={(event) => setSettings({ ...settings, autoLockMinutes: event.target.value })}>
+              <option value="0">لا تقفل تلقائيًا</option>
+              <option value="5">5 دقائق</option>
+              <option value="10">10 دقائق</option>
+              <option value="15">15 دقيقة</option>
+              <option value="30">30 دقيقة</option>
+            </select>
+          </div>
+          <div className="flex flex-wrap gap-2 md:justify-end">
+            <button onClick={() => setPasswordModal(true)} className="btn btn-secondary"><KeyRound className="w-4 h-4" /> تغيير كلمة المرور</button>
+            <button onClick={saveSettings} className="btn btn-premium"><Save className="w-4 h-4" /> حفظ إعدادات الأمان</button>
+          </div>
         </div>
       </section>
 
@@ -375,6 +515,37 @@ export default function Settings() {
               إضافة
             </button>
           </div>
+        </Modal>
+      )}
+
+      {selectedBackup && (
+        <Modal title="تأكيد استعادة النسخة الاحتياطية" onClose={() => !backupBusy && setSelectedBackup(null)}>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+            <p className="font-semibold">استعادة النسخة الاحتياطية ستستبدل بيانات المكتب الحالية بالبيانات الموجودة داخل النسخة.</p>
+            <p className="text-sm mt-2">سيتم أولاً إنشاء نسخة أمان تلقائية من البيانات الحالية، ثم إعادة تشغيل البرنامج بعد نجاح الاستعادة.</p>
+          </div>
+          <div className="mt-4 text-sm text-gray-600">
+            <div dir="ltr" className="truncate">{selectedBackup.filePath}</div>
+            <div className="mt-1">تاريخ النسخة: {new Date(selectedBackup.createdAt).toLocaleString('ar-EG')}</div>
+          </div>
+          <div className="flex justify-end gap-3 mt-5">
+            <button onClick={() => setSelectedBackup(null)} disabled={backupBusy != null} className="btn btn-secondary">إلغاء</button>
+            <button onClick={restoreBackup} disabled={backupBusy != null} className="btn btn-destructive">
+              {backupBusy === 'restore' ? 'جارٍ الاستعادة...' : 'متابعة الاستعادة'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {passwordModal && (
+        <Modal title="تغيير كلمة المرور" onClose={() => setPasswordModal(false)}>
+          <div className="space-y-4">
+            <div><label className={labelCls}>كلمة المرور الحالية</label><input type="password" className={inputCls} value={passwordForm.current} onChange={(event) => setPasswordForm({ ...passwordForm, current: event.target.value })} autoComplete="current-password" autoFocus /></div>
+            <div><label className={labelCls}>كلمة المرور الجديدة</label><input type="password" className={inputCls} value={passwordForm.next} onChange={(event) => setPasswordForm({ ...passwordForm, next: event.target.value })} autoComplete="new-password" /></div>
+            <div><label className={labelCls}>تأكيد كلمة المرور الجديدة</label><input type="password" className={inputCls} value={passwordForm.confirm} onChange={(event) => setPasswordForm({ ...passwordForm, confirm: event.target.value })} autoComplete="new-password" /></div>
+            {passwordError && <div className="text-sm text-red-600">{passwordError}</div>}
+          </div>
+          <div className="flex justify-end gap-3 mt-5"><button onClick={() => setPasswordModal(false)} className="btn btn-secondary">إلغاء</button><button onClick={changePassword} className="btn btn-premium">حفظ كلمة المرور</button></div>
         </Modal>
       )}
     </div>

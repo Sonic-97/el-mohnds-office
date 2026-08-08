@@ -13,6 +13,8 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "test:backup": "tsx --test tests/backup.test.ts",
+    "test:auth": "tsx --test tests/auth.test.ts",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "postinstall": "electron-builder install-app-deps"
   },
@@ -41,7 +43,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
@@ -55,11 +59,13 @@
     }
   },
   "dependencies": {
+    "adm-zip": "^0.6.0",
     "better-sqlite3": "^13.0.3"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.2.0",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/adm-zip": "^0.5.8",
     "@types/better-sqlite3": "^9.6.0",
     "@types/leaflet": "^1.9.22",
     "@types/react": "^19.2.18",
@@ -75,6 +81,7 @@
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.18.2",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.11",
     "typescript": "^5.9.3",
     "vite": "^7.3.6"
   }

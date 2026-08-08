@@ -2,20 +2,32 @@ import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, mkdirSync } from 'fs'
 import Database from 'better-sqlite3'
+import { ensureAuthSchema } from './auth'
 
 let db: Database.Database | null = null
+
+export function getDatabasePath(): string {
+  return join(app.getPath('userData'), 'al-mohands.db')
+}
 
 export function getDb(): Database.Database {
   if (db) return db
   const dir = app.getPath('userData')
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  db = new Database(join(dir, 'al-mohands.db'))
+  db = new Database(getDatabasePath())
   db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')
   createSchema(db)
+  ensureAuthSchema(db)
   migrate(db)
   seedMarketReference(db)
   return db
+}
+
+export function closeDb(): void {
+  if (!db) return
+  db.close()
+  db = null
 }
 
 function migrate(db: Database.Database): void {

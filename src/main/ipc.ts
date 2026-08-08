@@ -1,4 +1,4 @@
-import { ipcMain, app, shell } from 'electron'
+import { ipcMain, app, shell, dialog } from 'electron'
 import { join, basename, resolve } from 'path'
 import { copyFileSync, existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs'
 import type {
@@ -25,7 +25,16 @@ import type {
   FollowUpStats,
   ConstructionMaterialInput
 } from '@shared/types'
-import { getDb } from './db'
+import { closeDb, getDb } from './db'
+import {
+  createBackupArchive,
+  getBackupPaths,
+  inspectBackupArchive,
+  readBackupState,
+  restoreBackupArchive,
+  validateBackupArchive,
+  writeBackupState
+} from './backup'
 import {
   matchPropertiesForClient,
   matchClientsForProperty,
@@ -41,6 +50,9 @@ import {
   deleteCommission,
   commissionSummary
 } from './commissions'
+import { LocalAuthSession } from './auth'
+
+const authSession = new LocalAuthSession(getDb)
 
 function computePricePerMeter(price: number | null, area: number | null): number | null {
   if (price != null && area != null && area > 0) return Math.round((price / area) * 100) / 100
@@ -76,6 +88,79 @@ function buildDetail(db: ReturnType<typeof getDb>, row: any): PropertyDetail {
 }
 
 export function registerIpc(): void {
+  ipcMain.handle('auth:status', () => authSession.status())
+
+  ipcMain.handle('auth:setup', (_event, username: string, password: string) => {
+    return authSession.setup(username, password)
+  })
+
+  ipcMain.handle('auth:login', (_event, username: string, password: string) => {
+    return authSession.login(username, password)
+  })
+
+  ipcMain.handle('auth:lock', () => {
+    authSession.lock()
+    return true
+  })
+
+  ipcMain.handle('auth:logout', () => {
+    authSession.logout()
+    return true
+  })
+
+  ipcMain.handle('auth:changePassword', (_event, currentPassword: string, newPassword: string) => {
+    authSession.changePassword(currentPassword, newPassword)
+    return true
+  })
+
+  ipcMain.handle('backup:getStatus', () => readBackupState(getBackupPaths()))
+
+  ipcMain.handle('backup:create', async () => {
+    const now = new Date()
+    const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
+    const selected = await dialog.showSaveDialog({
+      title: 'إنشاء نسخة احتياطية',
+      defaultPath: `AlMohands-Backup-${stamp}.zip`,
+      filters: [{ name: 'AlMohands Backup', extensions: ['zip'] }]
+    })
+    if (selected.canceled || !selected.filePath) return null
+    const result = await createBackupArchive(selected.filePath, getBackupPaths(), getDb(), app.getVersion())
+    writeBackupState(getBackupPaths(), result)
+    return result
+  })
+
+  ipcMain.handle('backup:selectRestore', async () => {
+    const selected = await dialog.showOpenDialog({
+      title: 'اختيار نسخة احتياطية',
+      properties: ['openFile'],
+      filters: [{ name: 'AlMohands Backup', extensions: ['zip'] }]
+    })
+    if (selected.canceled || selected.filePaths.length === 0) return null
+    const filePath = selected.filePaths[0]
+    const manifest = validateBackupArchive(filePath)
+    return {
+      filePath,
+      createdAt: manifest.createdAt,
+      appVersion: manifest.appVersion,
+      filesIncluded: manifest.filesIncluded
+    }
+  })
+
+  ipcMain.handle('backup:restore', async (_event, filePath: string) => {
+    inspectBackupArchive(filePath)
+    const result = await restoreBackupArchive(filePath, getBackupPaths(), getDb(), closeDb, app.getVersion())
+    setTimeout(() => {
+      app.relaunch()
+      app.exit(0)
+    }, 1200)
+    return { restored: true, safetyBackup: result.safetyBackup }
+  })
+
+  ipcMain.handle('backup:openLocation', (_event, filePath: string) => {
+    if (filePath) shell.showItemInFolder(filePath)
+    return true
+  })
+
   ipcMain.handle('settings:getAll', () => {
     const rows = getDb().prepare('SELECT key, value FROM settings').all() as { key: string; value: string }[]
     const map: SettingsMap = {}
