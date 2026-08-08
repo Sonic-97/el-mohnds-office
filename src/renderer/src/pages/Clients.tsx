@@ -13,9 +13,8 @@ import {
   formatPrice
 } from '../lib/constants'
 
-const inputCls =
-  'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500'
-const labelCls = 'block text-sm font-medium text-gray-700 mb-1'
+const inputCls = 'control-input'
+const labelCls = 'field-label'
 
 const EMPTY_FORM: ClientInput = {
   name: '',
@@ -205,12 +204,12 @@ export default function Clients() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">العملاء</h1>
+          <h1 className="type-page-title">العملاء</h1>
           <p className="text-sm text-gray-500 mt-1">{clients.length} عميل</p>
         </div>
         <button
           onClick={openNew}
-          className="flex items-center gap-2 bg-navy-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-navy-900"
+          className="btn btn-premium"
         >
           <Plus className="w-4 h-4" /> إضافة عميل
         </button>
@@ -244,7 +243,7 @@ export default function Clients() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6 grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="surface-card p-4 mb-6 grid grid-cols-1 md:grid-cols-3 gap-3">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -270,7 +269,7 @@ export default function Clients() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="table-surface">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
             <tr>

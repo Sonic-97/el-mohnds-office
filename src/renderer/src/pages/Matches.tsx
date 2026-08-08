@@ -24,9 +24,9 @@ export default function Matches() {
   const propsEmpty = loaded && propertySummaries.length === 0
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="page-standard p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">المطابقات</h1>
+        <h1 className="type-page-title">المطابقات</h1>
         <p className="text-sm text-gray-500 mt-1">أفضل التطابقات بين العملاء والعقارات</p>
       </div>
 

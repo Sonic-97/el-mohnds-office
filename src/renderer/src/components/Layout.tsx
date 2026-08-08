@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   Building2,
@@ -16,24 +16,56 @@ import {
   ChartColumn
 } from 'lucide-react'
 import Logo from './Logo'
+import QuickAddMenu from './QuickAddMenu'
 import { fileUrl, onBrandingChanged, notifyBrandingChanged, saveBrandingFile } from '../lib/branding'
 
-const navItems = [
-  { to: '/', label: 'لوحة التحكم', icon: LayoutDashboard, end: true },
-  { to: '/properties', label: 'العقارات', icon: Building2 },
-  { to: '/clients', label: 'العملاء', icon: Users },
-  { to: '/matches', label: 'المطابقات', icon: Link2 },
-  { to: '/calc', label: 'أدوات العميل', icon: Calculator },
-  { to: '/materials', label: 'مواد البناء', icon: Hammer },
-  { to: '/commissions', label: 'العمولات', icon: Coins },
-  { to: '/demand', label: 'طلب العملاء', icon: ChartColumn },
-  { to: '/map', label: 'الخريطة', icon: MapIcon },
-  { to: '/zagazig', label: 'خريطة الزقازيق', icon: MapPinned },
-  { to: '/market', label: 'سوق الزقازيق', icon: LineChart },
-  { to: '/settings', label: 'الإعدادات', icon: SettingsIcon }
+const navGroups = [
+  { label: 'الرئيسية', items: [{ to: '/', label: 'لوحة التحكم', icon: LayoutDashboard, end: true }] },
+  {
+    label: 'العقارات والعملاء',
+    items: [
+      { to: '/properties', label: 'العقارات', icon: Building2 },
+      { to: '/clients', label: 'العملاء', icon: Users },
+      { to: '/matches', label: 'المطابقات', icon: Link2 }
+    ]
+  },
+  {
+    label: 'السوق والأدوات',
+    items: [
+      { to: '/market', label: 'سوق الزقازيق', icon: LineChart },
+      { to: '/materials', label: 'مواد البناء', icon: Hammer },
+      { to: '/calc', label: 'أدوات العميل', icon: Calculator },
+      { to: '/demand', label: 'طلب العملاء', icon: ChartColumn }
+    ]
+  },
+  {
+    label: 'إدارة المكتب',
+    items: [
+      { to: '/commissions', label: 'العمولات', icon: Coins },
+      { to: '/map', label: 'الخريطة', icon: MapIcon },
+      { to: '/zagazig', label: 'خريطة الزقازيق', icon: MapPinned },
+      { to: '/settings', label: 'الإعدادات', icon: SettingsIcon }
+    ]
+  }
 ]
 
+function pageTitle(pathname: string): string {
+  if (pathname.startsWith('/properties')) return pathname.includes('/new') ? 'إضافة عقار' : 'العقارات'
+  if (pathname.startsWith('/clients')) return 'العملاء'
+  if (pathname.startsWith('/matches')) return 'المطابقات'
+  if (pathname.startsWith('/market')) return 'سوق الزقازيق'
+  if (pathname.startsWith('/materials')) return 'مواد البناء'
+  if (pathname.startsWith('/calc')) return 'أدوات العميل'
+  if (pathname.startsWith('/demand')) return 'طلب العملاء'
+  if (pathname.startsWith('/commissions')) return 'العمولات'
+  if (pathname.startsWith('/zagazig')) return 'خريطة الزقازيق'
+  if (pathname.startsWith('/map')) return 'الخريطة'
+  if (pathname.startsWith('/settings')) return 'الإعدادات'
+  return 'لوحة التحكم'
+}
+
 export default function Layout() {
+  const location = useLocation()
   const [officeName, setOfficeName] = useState('المهندس')
   const [pageBg, setPageBg] = useState<string | null>(null)
 
@@ -67,9 +99,9 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen">
-      <aside className="w-60 shrink-0 bg-navy-950 text-white flex flex-col">
-        <div className="p-5 border-b border-white/10">
+    <div className="app-shell flex h-screen">
+      <aside className="app-sidebar w-56 shrink-0 bg-shell-950 text-white flex flex-col border-l border-line-dark">
+        <div className="px-5 py-5 border-b border-white/8">
           <div className="flex items-center gap-3">
             <div className="relative group">
               <Logo size={46} />
@@ -82,39 +114,48 @@ export default function Layout() {
               </label>
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-tight">{officeName}</h1>
-              <p className="text-[11px] text-gold-400 tracking-wide">Real Estate Office</p>
+              <h1 className="font-semibold text-base leading-tight">{officeName}</h1>
+              <p className="mt-1 text-[10px] text-gold-300/80 tracking-[0.12em]">REAL ESTATE OFFICE</p>
             </div>
           </div>
           <div className="gold-divider mt-4" />
         </div>
-        <nav className="flex-1 p-3 space-y-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors border-r-2 ${
-                  isActive
-                    ? 'bg-navy-800 text-white border-gold-500'
-                    : 'text-slate-300 border-transparent hover:bg-navy-900'
-                }`
-              }
-            >
-              <item.icon className="w-5 h-5" />
-              {item.label}
-            </NavLink>
+        <nav className="sidebar-nav flex-1 overflow-y-auto px-3 py-3">
+          {navGroups.map((group) => (
+            <div key={group.label} className="mb-3">
+              <div className="sidebar-group-label">{group.label}</div>
+              <div className="space-y-0.5">
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === '/'}
+                    className={({ isActive }) => `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`}
+                  >
+                    <item.icon className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
         <div className="p-4 text-xs text-slate-500 border-t border-white/10">الإصدار 1.0</div>
       </aside>
-      <main
-        className="flex-1 overflow-y-auto"
+      <div className="min-w-0 flex-1 flex flex-col">
+        <header className="app-topbar">
+          <div>
+            <div className="type-label text-ink-900">{pageTitle(location.pathname)}</div>
+            <div className="type-meta">نظام إدارة المكتب العقاري</div>
+          </div>
+          <QuickAddMenu premium />
+        </header>
+        <main
+        className="workspace-surface min-h-0 flex-1 overflow-y-auto"
         style={
           pageBg
             ? {
-                backgroundImage: `linear-gradient(rgba(248,250,252,0.88), rgba(248,250,252,0.88)), url("${pageBg}")`,
+                backgroundImage: `linear-gradient(rgba(243,244,243,0.94), rgba(243,244,243,0.94)), url("${pageBg}")`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundAttachment: 'fixed'
@@ -122,8 +163,9 @@ export default function Layout() {
             : undefined
         }
       >
-        <Outlet />
-      </main>
+          <Outlet />
+        </main>
+      </div>
     </div>
   )
 }

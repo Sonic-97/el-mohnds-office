@@ -392,7 +392,7 @@ export default function ZagazigMap() {
     <div className="p-6 h-full flex flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
-          <h1 className="text-2xl font-bold">خريطة الزقازيق العقارية</h1>
+          <h1 className="type-page-title">خريطة الزقازيق العقارية</h1>
           <p className="text-sm text-gray-500 mt-1">
             خريطة عرض للعميل — الخدمات والمواصلات والطرق والمناطق والأسعار من بيانات حقيقية فقط.
           </p>
@@ -513,7 +513,7 @@ export default function ZagazigMap() {
         )}
       </div>
 
-      <div className="flex-1 min-h-[420px] bg-white rounded-xl shadow-sm overflow-hidden relative">
+      <div className="surface-card flex-1 min-h-[420px] overflow-hidden relative">
         {poiLoading && (
           <div className="absolute top-3 inset-x-0 z-[500] flex justify-center pointer-events-none">
             <span className="bg-navy-950/85 text-white text-sm px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">

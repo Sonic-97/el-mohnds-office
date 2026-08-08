@@ -55,14 +55,14 @@ export default function ClientDetail() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="page-standard p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Link to="/clients" className="text-gray-500 hover:text-gray-800">
             <ArrowRight className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">{client.name}</h1>
+            <h1 className="type-page-title">{client.name}</h1>
             <p className="text-sm text-gray-500 mt-1">يبحث عن: {reqSummary(client)}</p>
           </div>
         </div>

@@ -8,10 +8,10 @@ export const STATUS_LABELS: Record<PropertyStatus, string> = {
 }
 
 export const STATUS_COLORS: Record<PropertyStatus, string> = {
-  available: 'bg-green-100 text-green-800',
-  sold: 'bg-red-100 text-red-800',
-  reserved: 'bg-amber-100 text-amber-800',
-  rented: 'bg-navy-100 text-navy-800'
+  available: 'badge badge-success',
+  sold: 'badge badge-danger',
+  reserved: 'badge badge-warning',
+  rented: 'badge badge-info'
 }
 
 export const SERIOUSNESS_LABELS: Record<string, string> = {
@@ -22,10 +22,10 @@ export const SERIOUSNESS_LABELS: Record<string, string> = {
 }
 
 export const SERIOUSNESS_COLORS: Record<string, string> = {
-  very_serious: 'bg-red-100 text-red-800',
-  serious: 'bg-orange-100 text-orange-800',
-  possible: 'bg-yellow-100 text-yellow-800',
-  not_serious: 'bg-gray-100 text-gray-600'
+  very_serious: 'badge badge-danger',
+  serious: 'badge badge-warning',
+  possible: 'badge badge-info',
+  not_serious: 'badge badge-neutral'
 }
 
 export const ROLE_LABELS: Record<string, string> = {
@@ -43,12 +43,12 @@ export const FOLLOWUP_STATUS_LABELS: Record<string, string> = {
 }
 
 export const FOLLOWUP_STATUS_COLORS: Record<string, string> = {
-  new: 'bg-gray-100 text-gray-700',
-  contacted: 'bg-blue-100 text-blue-800',
-  interested: 'bg-violet-100 text-violet-800',
-  viewing: 'bg-amber-100 text-amber-800',
-  negotiating: 'bg-orange-100 text-orange-800',
-  closed: 'bg-gray-200 text-gray-500'
+  new: 'badge badge-neutral',
+  contacted: 'badge badge-info',
+  interested: 'badge badge-success',
+  viewing: 'badge badge-warning',
+  negotiating: 'badge badge-warning',
+  closed: 'badge badge-neutral'
 }
 
 export const DOC_TYPES = ['عقد', 'ملكية', 'رخصة', 'مرافق', 'مستندات أخرى']

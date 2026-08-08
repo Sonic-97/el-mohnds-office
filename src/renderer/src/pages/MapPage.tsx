@@ -170,7 +170,7 @@ export default function MapPage() {
     <div className="p-6 h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold">الخريطة</h1>
+          <h1 className="type-page-title">الخريطة</h1>
           <p className="text-sm text-gray-500 mt-1">{points.length} عقار بموقع محدد</p>
         </div>
         <div className="flex items-center gap-2">
@@ -201,7 +201,7 @@ export default function MapPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+      <div className="surface-card p-4 mb-4">
         <div className="flex items-center gap-2 mb-2">
           <Crosshair className="w-4 h-4 text-gold-600" />
           <span className="text-sm font-bold text-gray-700">إضافة موقع بالإحداثيات</span>
@@ -214,7 +214,7 @@ export default function MapPage() {
               value={latText}
               onChange={(e) => handleInputChange('lat', e.target.value)}
               placeholder="30.5877"
-              className="w-44 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
+              className="control-input w-44 ltr-data"
             />
           </div>
           <div>
@@ -224,7 +224,7 @@ export default function MapPage() {
               value={lngText}
               onChange={(e) => handleInputChange('lng', e.target.value)}
               placeholder="31.5020"
-              className="w-44 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
+              className="control-input w-44 ltr-data"
             />
           </div>
           <button
@@ -245,7 +245,7 @@ export default function MapPage() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-[420px] bg-white rounded-xl shadow-sm overflow-hidden relative">
+      <div className="surface-card flex-1 min-h-[420px] overflow-hidden relative">
         {addMode && !showPanel && (
           <div className="absolute top-3 inset-x-0 z-[500] flex justify-center pointer-events-none">
             <div className="bg-navy-950/90 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-3">

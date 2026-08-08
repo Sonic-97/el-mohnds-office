@@ -43,9 +43,8 @@ const FINISH_FACTORS = [
   { value: 'resale', label: 'إعادة بيع', factor: 0.95 }
 ]
 
-const inputCls =
-  'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500'
-const labelCls = 'block text-xs font-medium text-gray-600 mb-1'
+const inputCls = 'control-input'
+const labelCls = 'field-label'
 
 function nf(v: string): number | null {
   const n = Number(v)
@@ -560,10 +559,10 @@ export default function Market() {
   const noMarket = areas.length === 0
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="page-wide p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">مؤشرات السوق العقاري - الزقازيق</h1>
+          <h1 className="type-page-title">مؤشرات السوق العقاري - الزقازيق</h1>
           <p className="text-sm text-gray-500 mt-1">
             بيانات سوق خارجية موثقة + بيانات مكتبك، مع تقديرات واضحة المصدر. لا نختلق أسعاراً.
           </p>

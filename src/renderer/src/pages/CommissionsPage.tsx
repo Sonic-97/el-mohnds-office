@@ -4,8 +4,8 @@ import { Plus, Pencil, Trash2, Coins, Wallet, CheckCheck, Clock, Link2 } from 'l
 import type { Commission, CommissionInput, CommissionSummary, Property } from '@shared/types'
 import Modal from '../components/Modal'
 
-const inputCls = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500'
-const labelCls = 'block text-xs font-medium text-gray-600 mb-1'
+const inputCls = 'control-input'
+const labelCls = 'field-label'
 
 function fmtEgp(v: number | null): string {
   if (v == null) return '-'
@@ -122,10 +122,10 @@ export default function Commissions() {
   const monthOutstanding = (summary?.monthOutstanding ?? 0) > 0
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="page-standard p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">العمولات</h1>
+          <h1 className="type-page-title">العمولات</h1>
           <p className="text-sm text-gray-500 mt-1">تسجيل عمولات العقارات المباعة والمؤجرة — نظام بسيط غير محاسبي.</p>
         </div>
         <button

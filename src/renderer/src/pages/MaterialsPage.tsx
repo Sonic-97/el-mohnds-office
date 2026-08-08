@@ -13,8 +13,8 @@ import {
 import type { ConstructionMaterial, ConstructionMaterialInput, MaterialRefreshResult } from '@shared/types'
 import Modal from '../components/Modal'
 
-const inputCls = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500'
-const labelCls = 'block text-sm font-medium text-gray-700 mb-1'
+const inputCls = 'control-input'
+const labelCls = 'field-label'
 
 const EMPTY: ConstructionMaterialInput = {
   name: '',
@@ -95,10 +95,10 @@ export default function Materials() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="page-standard p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">أسعار مواد البناء</h1>
+          <h1 className="type-page-title">أسعار مواد البناء</h1>
           <p className="text-sm text-gray-500 mt-1">
             أسعار يومية موثقة المصدر — لا نختلق أسعاراً. ابدأ بحديد وأسمنت بسعر موثق ومصدر.
           </p>

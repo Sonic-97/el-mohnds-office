@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChartColumn, Users, MapPin, Home, Info } from 'lucide-react'
 import type { DemandAnalytics, DemandItem } from '@shared/types'
+import { EmptyState } from '../components/ui'
 
 function BarList({ items, title, icon, empty }: { items: DemandItem[]; title: string; icon: React.ReactNode; empty: string }) {
   const max = items.length ? Math.max(...items.map((i) => i.count)) : 0
@@ -47,45 +48,43 @@ export default function Demand() {
 
   if (!data.enoughData) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-1">طلب العملاء</h1>
+      <div className="page-standard p-6">
+        <h1 className="type-page-title mb-1">طلب العملاء</h1>
         <p className="text-sm text-gray-500 mb-6">تحليل المتطلبات الفعلية المخزنة في قاعدة بياناتك.</p>
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <ChartColumn className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-600 font-medium">لا توجد بيانات عملاء كافية للتحليل.</p>
-          <p className="text-sm text-gray-400 mt-1">
-            أضف عملاء مع متطلباتهم (نوع العقار، المنطقة، الميزانية، المساحة) وستظهر هنا تحليلات حقيقية فقط.
-          </p>
-        </div>
+        <EmptyState
+          icon={<ChartColumn className="w-6 h-6" strokeWidth={1.75} />}
+          title="لا توجد بيانات عملاء كافية للتحليل"
+          description="أضف عملاء مع متطلباتهم (نوع العقار، المنطقة، الميزانية، المساحة) وستظهر هنا تحليلات حقيقية فقط."
+        />
       </div>
     )
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="page-standard p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">طلب العملاء</h1>
+        <h1 className="type-page-title">طلب العملاء</h1>
         <p className="text-sm text-gray-500 mt-1">
           تحليل حقيقي لمتطلبات العملاء المخزنة في SQLite — لا بيانات مفتعلة.
         </p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-5 border-t-2 border-navy-800">
+        <div className="card-metric p-5">
           <div className="text-xs text-gray-500 mb-1">إجمالي العملاء</div>
           <div className="text-2xl font-bold">{data.totalClients.toLocaleString('ar-EG')}</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-5 border-t-2 border-gold-500">
+        <div className="card-metric p-5">
           <div className="text-xs text-gray-500 mb-1">عملاء بمتطلبات</div>
           <div className="text-2xl font-bold">{data.withRequirements.toLocaleString('ar-EG')}</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-5 border-t-2 border-navy-600">
+        <div className="card-metric p-5">
           <div className="text-xs text-gray-500 mb-1">متوسط المساحة المطلوبة</div>
           <div className="text-2xl font-bold">
             {data.avgArea != null ? `${data.avgArea.toLocaleString('ar-EG')} م²` : '—'}
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-5 border-t-2 border-emerald-600">
+        <div className="card-metric p-5">
           <div className="text-xs text-gray-500 mb-1">أكثر نوع مطلوب</div>
           <div className="text-xl font-bold truncate">{data.topTypes[0]?.label || '—'}</div>
         </div>

@@ -15,8 +15,8 @@ import {
 import type { MarketArea, ConstructionCost, ConstructionMaterial, Property } from '@shared/types'
 import { fmtEgp, fmtM2 } from '../lib/market'
 
-const inputCls = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500'
-const labelCls = 'block text-xs font-medium text-gray-600 mb-1'
+const inputCls = 'control-input'
+const labelCls = 'field-label'
 
 type Tool = 'purchase' | 'finishing' | 'build'
 type FinLevel = 'economic' | 'medium' | 'high'
@@ -158,9 +158,9 @@ export default function Calculators() {
   ]
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="page-standard p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">أدوات العميل</h1>
+        <h1 className="type-page-title">أدوات العميل</h1>
         <p className="text-sm text-gray-500 mt-1">
           حسابات تقديرية مبنية على بيانات السوق وبيانات مكتبك — قابلة للتعديل اليدوي دائماً.
         </p>

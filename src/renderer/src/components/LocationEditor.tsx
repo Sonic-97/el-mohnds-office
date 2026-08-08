@@ -9,9 +9,8 @@ interface LocationEditorProps {
   onChange: (latitude: number, longitude: number) => void
 }
 
-const inputCls =
-  'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500'
-const labelCls = 'block text-xs font-medium text-gray-600 mb-1'
+const inputCls = 'control-input'
+const labelCls = 'field-label'
 
 export default function LocationEditor({ latitude, longitude, onChange }: LocationEditorProps) {
   const [latText, setLatText] = useState(latitude != null ? String(latitude) : '')

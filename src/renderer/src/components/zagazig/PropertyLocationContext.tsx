@@ -57,7 +57,7 @@ export default function PropertyLocationContext({ property }: { property: Proper
   if (lat == null || lon == null) return null
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div className="surface-card p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-bold flex items-center gap-2">
           <MapPinned className="w-5 h-5 text-gold-600" /> موقع العقار داخل الزقازيق

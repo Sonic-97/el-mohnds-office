@@ -13,10 +13,9 @@ import type {
 } from '@shared/types'
 import { STATUS_LABELS, FACING_OPTIONS, FILE_KINDS, formatArea } from '../lib/constants'
 
-const inputCls =
-  'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500'
+const inputCls = 'control-input'
 
-const labelCls = 'block text-sm font-medium text-gray-700 mb-1'
+const labelCls = 'field-label'
 
 function parseLatLng(url: string): { latitude: number | null; longitude: number | null } {
   const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
@@ -192,14 +191,14 @@ export default function PropertyForm() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="page-standard p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Link to="/properties" className="text-gray-500 hover:text-gray-800">
             <ArrowRight className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">{isEdit ? 'تعديل عقار' : 'إضافة عقار'}</h1>
+            <h1 className="type-page-title">{isEdit ? 'تعديل عقار' : 'إضافة عقار'}</h1>
             <p className="text-sm text-gray-500 mt-1">أدخل بيانات العقار كاملة</p>
           </div>
         </div>

@@ -11,9 +11,8 @@ interface AddLocationPanelProps {
   onCancel: () => void
 }
 
-const inputCls =
-  'w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500'
-const labelCls = 'block text-xs font-medium text-gray-600 mb-0.5'
+const inputCls = 'control-input'
+const labelCls = 'field-label'
 
 export default function AddLocationPanel({
   latitude,

@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import {
   ArrowRight,
+  Building2,
   MapPin,
   Phone,
   Pencil,
   Trash2,
   Share2,
   FileText,
-  Image as ImageIcon,
   Eye,
   EyeOff,
   ExternalLink,
@@ -100,13 +100,13 @@ export default function PropertyDetail() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="page-wide p-6 lg:p-8">
+      <div className="property-detail-header flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <Link to="/properties" className="text-gray-500 hover:text-gray-800">
             <ArrowRight className="w-5 h-5" />
           </Link>
-          <h1 className="text-2xl font-bold">{p.name}</h1>
+          <h1 className="type-page-title">{p.name}</h1>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -165,27 +165,28 @@ export default function PropertyDetail() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 flex flex-col gap-6">
           {p.latitude != null && p.longitude != null && (
-            <PropertyLocationContext property={p} />
+            <div className="order-4"><PropertyLocationContext property={p} /></div>
           )}
 
           {images.length > 0 ? (
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {images.map((img) => (
-                  <img key={img.id} src={`file:///${img.path.replace(/\\/g, '/')}`} className="w-full h-40 object-cover rounded-lg" alt="" />
+            <div className="property-gallery order-1">
+              <div className="grid grid-cols-2 gap-2">
+                {images.slice(0, 5).map((img, index) => (
+                  <img key={img.id} src={`file:///${img.path.replace(/\\/g, '/')}`} className={index === 0 ? 'property-gallery-hero col-span-2' : 'property-gallery-thumb'} alt="" />
                 ))}
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-sm p-10 text-center text-gray-400">
-              <ImageIcon className="w-10 h-10 mx-auto mb-2" />
-              <p className="text-sm">لا توجد صور</p>
+            <div className="property-gallery-placeholder order-1">
+              <Building2 className="w-12 h-12" strokeWidth={1.25} />
+              <p className="mt-3 text-sm font-medium text-navy-700">{p.type || 'عقار'}</p>
+              <p className="mt-1 text-xs text-muted-500">المهندس للتطوير العقاري · لا توجد صور بعد</p>
             </div>
           )}
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="surface-card order-2 p-6">
             <h2 className="font-bold mb-4">بيانات العقار</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6">
               <InfoRow label="النوع" value={p.type} />
@@ -203,7 +204,7 @@ export default function PropertyDetail() {
           </div>
 
           {!clientMode && p.documents.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="surface-card order-5 p-6">
               <h2 className="font-bold mb-4">المستندات</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {p.documents.map((d) => (
@@ -222,7 +223,7 @@ export default function PropertyDetail() {
           )}
 
           {otherFiles.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="surface-card order-6 p-6">
               <h2 className="font-bold mb-4">الملفات</h2>
               <div className="space-y-2">
                 {otherFiles.map((f: PropertyFile) => (
@@ -248,14 +249,14 @@ export default function PropertyDetail() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="property-price-panel p-6">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm text-gray-500">السعر</div>
               <span className={`text-xs px-2 py-1 rounded ${STATUS_COLORS[p.status]}`}>
                 {STATUS_LABELS[p.status]}
               </span>
             </div>
-            <div className="text-2xl font-bold text-green-700">{formatPrice(p.price)}</div>
+            <div className="type-price property-detail-price">{formatPrice(p.price)}</div>
             <div className="flex items-center gap-2 text-sm text-gray-600 mt-3">
               <Ruler className="w-4 h-4 text-gray-400" /> {formatArea(p.area)}
               {p.pricePerMeter != null && (
@@ -279,7 +280,7 @@ export default function PropertyDetail() {
           </div>
 
           {!clientMode && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="internal-office-panel p-6">
               <h2 className="font-bold mb-4 flex items-center gap-2">
                 <UserIcon className="w-5 h-5 text-navy-700" /> بيانات المالك
               </h2>
@@ -310,7 +311,7 @@ export default function PropertyDetail() {
           )}
 
           {!clientMode && p.notes && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="internal-office-panel p-6">
               <h2 className="font-bold mb-3 flex items-center gap-2">
                 <StickyNote className="w-5 h-5 text-amber-500" /> ملاحظات داخلية
               </h2>
@@ -318,7 +319,7 @@ export default function PropertyDetail() {
             </div>
           )}
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="surface-card p-5">
             <div className="text-xs text-gray-500">أُضيف في {formatDate(p.createdAt)}</div>
             <div className="text-xs text-gray-500 mt-1">آخر تحديث {formatDate(p.updatedAt)}</div>
           </div>
@@ -326,7 +327,7 @@ export default function PropertyDetail() {
       </div>
 
       {!clientMode && (
-        <div id="potential-clients" className="bg-white rounded-xl shadow-sm p-6 mt-6">
+        <div id="potential-clients" className="internal-office-section p-6 mt-6">
           <div className="flex items-center gap-2 mb-4">
             <Users className="w-5 h-5 text-gold-600" />
             <h2 className="font-bold text-lg">عملاء محتملون</h2>

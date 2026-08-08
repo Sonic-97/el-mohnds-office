@@ -11,12 +11,12 @@ interface ModalProps {
 export default function Modal({ title, onClose, children, size = 'md' }: ModalProps) {
   const sizes = { md: 'max-w-lg', lg: 'max-w-3xl', xl: 'max-w-6xl' }
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto p-6">
-      <div className={`bg-white rounded-xl shadow-xl w-full ${sizes[size]} mt-8 mb-8`}>
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="font-bold text-lg">{title}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
-            <X className="w-5 h-5" />
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-6">
+      <div className={`modal-surface w-full ${sizes[size]} mt-8 mb-8`} role="dialog" aria-modal="true" aria-label={title}>
+        <div className="modal-header flex items-center justify-between px-6 py-4">
+          <h2 className="type-section-title">{title}</h2>
+          <button onClick={onClose} className="btn btn-tertiary btn-icon" aria-label="إغلاق النافذة" title="إغلاق">
+            <X className="w-4 h-4" strokeWidth={1.75} />
           </button>
         </div>
         <div className="p-6">{children}</div>

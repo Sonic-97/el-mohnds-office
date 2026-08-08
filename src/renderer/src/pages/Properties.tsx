@@ -4,6 +4,7 @@ import { Search, Plus, GitCompare, Filter, Building2, X } from 'lucide-react'
 import type { Property, PropertyType, PropertyStatus } from '@shared/types'
 import PropertyCard from '../components/PropertyCard'
 import CompareModal from '../components/CompareModal'
+import { EmptyState } from '../components/ui'
 import { STATUS_LABELS } from '../lib/constants'
 
 const EMPTY_FILTERS = {
@@ -81,45 +82,45 @@ export default function Properties() {
   const filtersActive = JSON.stringify(filters) !== JSON.stringify(EMPTY_FILTERS)
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="page-wide p-6 lg:p-8">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold">العقارات</h1>
+          <h1 className="type-page-title">العقارات</h1>
           <p className="text-sm text-gray-500 mt-1">{properties.length} عقار</p>
         </div>
         <div className="flex items-center gap-2">
           {selected.length >= 2 && (
             <button
               onClick={() => setCompareOpen(true)}
-              className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-900"
+              className="btn btn-operational"
             >
               <GitCompare className="w-4 h-4" /> مقارنة ({selected.length})
             </button>
           )}
           <Link
             to="/properties/new"
-            className="flex items-center gap-2 bg-navy-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-navy-900"
+          className="btn btn-premium"
           >
             <Plus className="w-4 h-4" /> إضافة عقار
           </Link>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+      <div className="property-filter-panel p-4 mb-6">
         <div className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-3">
           <Filter className="w-4 h-4" /> البحث والتصفية
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
           <input
             value={filters.query}
             onChange={(e) => setFilters({ ...filters, query: e.target.value })}
             placeholder="اسم العقار، المالك، الهاتف..."
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
+            className="control-input"
           />
           <select
             value={filters.type}
             onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-            className="border rounded-lg px-3 py-2 text-sm"
+            className="control-input"
           >
             <option value="">كل الأنواع</option>
             {types.map((t) => (
@@ -132,12 +133,12 @@ export default function Properties() {
             value={filters.zone}
             onChange={(e) => setFilters({ ...filters, zone: e.target.value })}
             placeholder="المنطقة / المدينة"
-            className="border rounded-lg px-3 py-2 text-sm"
+            className="control-input"
           />
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="border rounded-lg px-3 py-2 text-sm"
+            className="control-input"
           >
             <option value="">كل الحالات</option>
             {Object.entries(STATUS_LABELS).map(([k, v]) => (
@@ -151,27 +152,27 @@ export default function Properties() {
             value={filters.maxPrice}
             onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
             placeholder="الحد الأقصى للسعر"
-            className="border rounded-lg px-3 py-2 text-sm"
+            className="control-input"
           />
           <input
             type="number"
             value={filters.minArea}
             onChange={(e) => setFilters({ ...filters, minArea: e.target.value })}
             placeholder="مساحة من"
-            className="border rounded-lg px-3 py-2 text-sm"
+            className="control-input"
           />
           <input
             type="number"
             value={filters.maxArea}
             onChange={(e) => setFilters({ ...filters, maxArea: e.target.value })}
             placeholder="مساحة إلى"
-            className="border rounded-lg px-3 py-2 text-sm"
+            className="control-input"
           />
         </div>
         <div className="flex gap-2 mt-3">
           <button
             onClick={() => runSearch(filters)}
-            className="flex items-center gap-2 bg-navy-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-navy-900"
+            className="btn btn-operational btn-sm"
           >
             <Search className="w-4 h-4" /> بحث
           </button>
@@ -181,7 +182,7 @@ export default function Properties() {
               runSearch(EMPTY_FILTERS)
               setSearchParams({})
             }}
-            className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50"
+            className="btn btn-secondary btn-sm"
           >
             مسح
           </button>
@@ -232,27 +233,14 @@ export default function Properties() {
       )}
 
       {properties.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl shadow-sm">
-          <Building2 className="w-14 h-14 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">
-            {filtersActive ? 'لا توجد عقارات مطابقة للبحث.' : 'لا توجد عقارات مضافة بعد.'}
-          </p>
-          <p className="text-sm text-gray-400 mt-1">
-            {filtersActive
-              ? 'جرّب تعديل معايير البحث أو مسحها.'
-              : 'اضغط "إضافة عقار" لإدخال أول عقار في مكتبك.'}
-          </p>
-          {!filtersActive && (
-            <Link
-              to="/properties/new"
-              className="inline-flex items-center gap-2 bg-navy-800 text-white px-5 py-2.5 rounded-lg text-sm mt-5 hover:bg-navy-900"
-            >
-              <Plus className="w-4 h-4" /> إضافة عقار
-            </Link>
-          )}
-        </div>
+        <EmptyState
+          icon={<Building2 className="w-6 h-6" strokeWidth={1.75} />}
+          title={filtersActive ? 'لا توجد عقارات مطابقة للبحث' : 'لا توجد عقارات مضافة بعد'}
+          description={filtersActive ? 'جرّب تعديل معايير البحث أو مسحها.' : 'أضف أول عقار ليظهر في المكتب والخرائط والمطابقات.'}
+          primaryAction={!filtersActive ? <Link to="/properties/new" className="btn btn-premium"><Plus className="w-4 h-4" /> إضافة عقار</Link> : undefined}
+        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {properties.map((p) => (
             <PropertyCard
               key={p.id}
