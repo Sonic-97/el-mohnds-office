@@ -75,6 +75,11 @@ function AreaModal({
           aptMax: initial.aptMax,
           aptCount: initial.aptCount,
           aptDataType: initial.aptDataType,
+          rentMin: initial.rentMin,
+          rentAvg: initial.rentAvg,
+          rentMax: initial.rentMax,
+          rentCount: initial.rentCount,
+          rentDataType: initial.rentDataType,
           sourceName: initial.sourceName,
           sourceUrl: initial.sourceUrl,
           sourceDate: initial.sourceDate,
@@ -92,6 +97,11 @@ function AreaModal({
           aptMax: null,
           aptCount: 0,
           aptDataType: 'manual',
+          rentMin: null,
+          rentAvg: null,
+          rentMax: null,
+          rentCount: 0,
+          rentDataType: 'manual',
           sourceName: '',
           sourceUrl: '',
           sourceDate: '',
@@ -197,6 +207,39 @@ function AreaModal({
               </select>
             </div>
           </div>
+        </div>
+
+        <div className="border border-gray-200 rounded-lg p-3">
+          <div className="font-semibold text-sm text-navy-800 mb-2 flex items-center gap-2">
+            <Home className="w-4 h-4 text-gold-600" /> الإيجار الشهري - الشقق السكنية (ج.م)
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div>
+              <label className={field('')}>الأقل</label>
+              <input className={inputCls} value={form.rentMin ?? ''} onChange={(e) => setForm({ ...form, rentMin: nf(e.target.value) })} />
+            </div>
+            <div>
+              <label className={field('')}>المتوسط</label>
+              <input className={inputCls} value={form.rentAvg ?? ''} onChange={(e) => setForm({ ...form, rentAvg: nf(e.target.value) })} />
+            </div>
+            <div>
+              <label className={field('')}>الأعلى</label>
+              <input className={inputCls} value={form.rentMax ?? ''} onChange={(e) => setForm({ ...form, rentMax: nf(e.target.value) })} />
+            </div>
+            <div>
+              <label className={field('')}>عدد العينات</label>
+              <input className={inputCls} value={form.rentCount} onChange={(e) => setForm({ ...form, rentCount: Number(e.target.value) || 0 })} />
+            </div>
+            <div>
+              <label className={field('')}>نوع البيانات</label>
+              <select className={inputCls} value={form.rentDataType} onChange={(e) => setForm({ ...form, rentDataType: e.target.value as MarketDataType })}>
+                {Object.entries(DTYPE_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2">اختياري — لا تضع أرقاماً إلا إذا كانت من بيانات موثقة أو من معرفتك المحلية المؤكدة.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

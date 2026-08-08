@@ -28,7 +28,24 @@ const api = {
   },
   stats: {
     dashboard: () => ipcRenderer.invoke('stats:dashboard'),
-    areaAverages: () => ipcRenderer.invoke('stats:areaAverages')
+    areaAverages: () => ipcRenderer.invoke('stats:areaAverages'),
+    attention: () => ipcRenderer.invoke('stats:attention'),
+    demand: () => ipcRenderer.invoke('stats:demand'),
+    followups: () => ipcRenderer.invoke('stats:followups')
+  },
+  materials: {
+    list: () => ipcRenderer.invoke('materials:list'),
+    save: (input: import('../shared/types').ConstructionMaterialInput) => ipcRenderer.invoke('materials:save', input),
+    delete: (id: number) => ipcRenderer.invoke('materials:delete', id),
+    refresh: () => ipcRenderer.invoke('materials:refresh')
+  },
+  commissions: {
+    list: () => ipcRenderer.invoke('commissions:list'),
+    create: (input: import('../shared/types').CommissionInput) => ipcRenderer.invoke('commissions:create', input),
+    update: (id: number, input: import('../shared/types').CommissionInput) =>
+      ipcRenderer.invoke('commissions:update', id, input),
+    delete: (id: number) => ipcRenderer.invoke('commissions:delete', id),
+    summary: () => ipcRenderer.invoke('commissions:summary')
   },
   files: {
     list: (propertyId: number) => ipcRenderer.invoke('files:list', propertyId),
@@ -83,6 +100,13 @@ const api = {
     save: (input: import('../shared/types').ConstructionCostInput) =>
       ipcRenderer.invoke('constCost:save', input),
     delete: (id: number) => ipcRenderer.invoke('constCost:delete', id)
+  },
+  zmap: {
+    getPoiData: (force?: boolean) => ipcRenderer.invoke('zmap:getPoiData', force),
+    listAreas: () => ipcRenderer.invoke('zmap:listAreas'),
+    saveArea: (input: import('../shared/types').MapAreaInput) =>
+      ipcRenderer.invoke('zmap:saveArea', input),
+    deleteArea: (id: number) => ipcRenderer.invoke('zmap:deleteArea', id)
   }
 }
 

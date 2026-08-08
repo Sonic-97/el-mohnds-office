@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Phone, Pencil, Users, Search } from 'lucide-react'
+import { ArrowRight, Phone, Pencil, Users, Search, Map as MapIcon } from 'lucide-react'
 import type { Client, PropertyMatch } from '@shared/types'
 import {
   SERIOUSNESS_LABELS,
@@ -114,9 +114,21 @@ export default function ClientDetail() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Search className="w-5 h-5 text-gold-600" />
-          <h2 className="font-bold text-lg">العقارات المناسبة</h2>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Search className="w-5 h-5 text-gold-600" />
+            <h2 className="font-bold text-lg">العقارات المناسبة</h2>
+          </div>
+          {matches.length > 0 && (
+            <button
+              onClick={() => {
+                window.location.hash = `#/zagazig?client=${client.id}`
+              }}
+              className="flex items-center gap-2 bg-navy-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-navy-900"
+            >
+              <MapIcon className="w-4 h-4" /> عرض العقارات المناسبة على الخريطة
+            </button>
+          )}
         </div>
 
         {matches.length === 0 ? (

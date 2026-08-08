@@ -36,6 +36,20 @@ function migrate(db: Database.Database): void {
   addCol('areaFrom', `areaFrom REAL`)
   addCol('areaTo', `areaTo REAL`)
   addCol('desiredStatus', `desiredStatus TEXT NOT NULL DEFAULT ''`)
+  addCol('followUpDate', `followUpDate TEXT NOT NULL DEFAULT ''`)
+  addCol('followUpNote', `followUpNote TEXT NOT NULL DEFAULT ''`)
+  addCol('followUpStatus', `followUpStatus TEXT NOT NULL DEFAULT 'new'`)
+
+  const mCols = db.prepare(`PRAGMA table_info(market_areas)`).all() as { name: string }[]
+  const mHas = (name: string): boolean => mCols.some((c) => c.name === name)
+  const addMCol = (name: string, ddl: string): void => {
+    if (!mHas(name)) db.exec(`ALTER TABLE market_areas ADD COLUMN ${ddl}`)
+  }
+  addMCol('rentMin', `rentMin REAL`)
+  addMCol('rentAvg', `rentAvg REAL`)
+  addMCol('rentMax', `rentMax REAL`)
+  addMCol('rentCount', `rentCount INTEGER NOT NULL DEFAULT 0`)
+  addMCol('rentDataType', `rentDataType TEXT NOT NULL DEFAULT 'manual'`)
 }
 
 function createSchema(db: Database.Database): void {
@@ -170,6 +184,48 @@ function createSchema(db: Database.Database): void {
       sourceUrl TEXT NOT NULL DEFAULT '',
       sourceDate TEXT NOT NULL DEFAULT '',
       updatedAt TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS map_areas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      color TEXT NOT NULL DEFAULT '#2a4872',
+      points TEXT NOT NULL DEFAULT '[]',
+      notes TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+      updatedAt TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS zmap_cache (
+      key TEXT PRIMARY KEY,
+      payload TEXT NOT NULL DEFAULT '{}',
+      fetchedAt TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS construction_materials (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      unit TEXT NOT NULL DEFAULT 'طن',
+      price REAL,
+      previousPrice REAL,
+      source TEXT NOT NULL DEFAULT '',
+      sourceUrl TEXT NOT NULL DEFAULT '',
+      notes TEXT NOT NULL DEFAULT '',
+      updatedAt TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS commissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      propertyId INTEGER NOT NULL,
+      finalPrice REAL NOT NULL DEFAULT 0,
+      cType TEXT NOT NULL DEFAULT 'percent',
+      rate REAL NOT NULL DEFAULT 0,
+      amount REAL NOT NULL DEFAULT 0,
+      received INTEGER NOT NULL DEFAULT 0,
+      date TEXT NOT NULL DEFAULT (datetime('now')),
+      notes TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (propertyId) REFERENCES properties(id) ON DELETE CASCADE
     );
   `)
 }

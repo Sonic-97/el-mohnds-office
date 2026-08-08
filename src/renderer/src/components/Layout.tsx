@@ -5,10 +5,15 @@ import {
   Building2,
   Users,
   Map as MapIcon,
+  MapPinned,
   Settings as SettingsIcon,
   LineChart,
   Pencil,
-  Link2
+  Link2,
+  Hammer,
+  Calculator,
+  Coins,
+  ChartColumn
 } from 'lucide-react'
 import Logo from './Logo'
 import { fileUrl, onBrandingChanged, notifyBrandingChanged, saveBrandingFile } from '../lib/branding'
@@ -18,7 +23,12 @@ const navItems = [
   { to: '/properties', label: 'العقارات', icon: Building2 },
   { to: '/clients', label: 'العملاء', icon: Users },
   { to: '/matches', label: 'المطابقات', icon: Link2 },
+  { to: '/calc', label: 'أدوات العميل', icon: Calculator },
+  { to: '/materials', label: 'مواد البناء', icon: Hammer },
+  { to: '/commissions', label: 'العمولات', icon: Coins },
+  { to: '/demand', label: 'طلب العملاء', icon: ChartColumn },
   { to: '/map', label: 'الخريطة', icon: MapIcon },
+  { to: '/zagazig', label: 'خريطة الزقازيق', icon: MapPinned },
   { to: '/market', label: 'سوق الزقازيق', icon: LineChart },
   { to: '/settings', label: 'الإعدادات', icon: SettingsIcon }
 ]

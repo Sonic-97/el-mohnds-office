@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, Search, Phone, Users, ListFilter, Link2 } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import type { Client, ClientInput, PropertyType } from '@shared/types'
+import { Plus, Pencil, Trash2, Search, Phone, Users, ListFilter, Link2, CheckCheck, CalendarClock } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import type { Client, ClientInput, PropertyType, FollowUpStatus } from '@shared/types'
 import Modal from '../components/Modal'
 import {
   SERIOUSNESS_LABELS,
   SERIOUSNESS_COLORS,
   ROLE_LABELS,
   STATUS_LABELS,
+  FOLLOWUP_STATUS_LABELS,
+  FOLLOWUP_STATUS_COLORS,
   formatPrice
 } from '../lib/constants'
 
@@ -36,10 +38,14 @@ const EMPTY_FORM: ClientInput = {
   budgetTo: null,
   areaFrom: null,
   areaTo: null,
-  desiredStatus: ''
+  desiredStatus: '',
+  followUpDate: '',
+  followUpNote: '',
+  followUpStatus: 'new'
 }
 
 export default function Clients() {
+  const [searchParams] = useSearchParams()
   const [clients, setClients] = useState<Client[]>([])
   const [types, setTypes] = useState<PropertyType[]>([])
   const [query, setQuery] = useState('')
@@ -51,6 +57,8 @@ export default function Clients() {
   const [confirmDelete, setConfirmDelete] = useState<Client | null>(null)
   const [matchCounts, setMatchCounts] = useState<Record<number, number>>({})
   const [quickMatch, setQuickMatch] = useState<{ clientId: number; count: number } | null>(null)
+  const [followupClient, setFollowupClient] = useState<Client | null>(null)
+  const [followupForm, setFollowupForm] = useState({ date: '', note: '', status: 'new' as FollowUpStatus })
 
   function load() {
     window.api.clients.list().then(setClients)
@@ -63,6 +71,14 @@ export default function Clients() {
   }
 
   useEffect(load, [])
+
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setForm(EMPTY_FORM)
+      setCreating(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   function openNew() {
     setForm(EMPTY_FORM)
@@ -91,7 +107,10 @@ export default function Clients() {
       budgetTo: c.budgetTo,
       areaFrom: c.areaFrom,
       areaTo: c.areaTo,
-      desiredStatus: c.desiredStatus
+      desiredStatus: c.desiredStatus,
+      followUpDate: c.followUpDate,
+      followUpNote: c.followUpNote,
+      followUpStatus: c.followUpStatus
     })
     setEditing(c)
   }
@@ -120,12 +139,67 @@ export default function Clients() {
     load()
   }
 
+  const followupOnly = searchParams.get('followup') === '1'
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const isDue = (c: Client): boolean => {
+    if (!c.followUpDate || c.followUpStatus === 'closed') return false
+    const d = new Date(c.followUpDate + 'T00:00:00')
+    d.setHours(0, 0, 0, 0)
+    return !isNaN(d.getTime()) && d.getTime() <= todayStart.getTime()
+  }
+  const dueClients = clients.filter(isDue)
+
   const filtered = clients.filter((c) => {
+    if (followupOnly && !isDue(c)) return false
     if (query && !(c.name.includes(query) || c.phone.includes(query) || c.area.includes(query))) return false
     if (roleFilter && c.role !== roleFilter) return false
     if (seriousnessFilter && c.seriousness !== seriousnessFilter) return false
     return true
   })
+
+  function openFollowUp(c: Client) {
+    setFollowupForm({
+      date: c.followUpDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      note: c.followUpNote,
+      status: c.followUpStatus
+    })
+    setFollowupClient(c)
+  }
+
+  async function saveFollowUp() {
+    if (!followupClient) return
+    const c = followupClient
+    const payload: ClientInput = {
+      name: c.name,
+      phone: c.phone,
+      role: c.role,
+      budget: c.budget,
+      preferredArea: c.preferredArea,
+      preferredType: c.preferredType,
+      preferredAreaSize: c.preferredAreaSize,
+      seriousness: c.seriousness,
+      notes: c.notes,
+      type: c.type,
+      area: c.area,
+      requestType: c.requestType,
+      governorate: c.governorate,
+      city: c.city,
+      center: c.center,
+      neighborhood: c.neighborhood,
+      budgetFrom: c.budgetFrom,
+      budgetTo: c.budgetTo,
+      areaFrom: c.areaFrom,
+      areaTo: c.areaTo,
+      desiredStatus: c.desiredStatus,
+      followUpDate: followupForm.date,
+      followUpNote: followupForm.note,
+      followUpStatus: followupForm.status
+    }
+    await window.api.clients.update(c.id, payload)
+    setFollowupClient(null)
+    load()
+  }
 
   return (
     <div className="p-6">
@@ -152,6 +226,20 @@ export default function Clients() {
             className="text-sm bg-green-600 text-white px-4 py-1.5 rounded-lg hover:bg-green-700"
           >
             عرض النتائج
+          </Link>
+        </div>
+      )}
+
+      {followupOnly && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 mb-6 flex items-center justify-between">
+          <span className="text-sm">
+            المتابعات المستحقة (المتأخرة أو اليوم): {dueClients.length.toLocaleString('ar-EG')} عميل
+          </span>
+          <Link
+            to="/clients"
+            className="text-sm bg-amber-600 text-white px-4 py-1.5 rounded-lg hover:bg-amber-700"
+          >
+            عرض كل العملاء
           </Link>
         </div>
       )}
@@ -193,6 +281,7 @@ export default function Clients() {
               <th className="text-right px-4 py-3">المنطقة المطلوبة</th>
               <th className="text-right px-4 py-3">نوع العقار</th>
               <th className="text-right px-4 py-3">الجدية</th>
+              <th className="text-right px-4 py-3">المتابعة</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -224,6 +313,23 @@ export default function Clients() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
+                  {c.followUpDate ? (
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className={`text-xs px-2 py-0.5 rounded ${FOLLOWUP_STATUS_COLORS[c.followUpStatus]}`}>
+                        {FOLLOWUP_STATUS_LABELS[c.followUpStatus]}
+                      </span>
+                      <span className={`text-[11px] ${isDue(c) ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                        {c.followUpDate.slice(0, 10)}
+                        {isDue(c) && ' · مستحقة'}
+                      </span>
+                    </div>
+                  ) : (
+                    <button onClick={() => openFollowUp(c)} className="text-xs text-navy-700 hover:underline">
+                      جدولة متابعة
+                    </button>
+                  )}
+                </td>
+                <td className="px-4 py-3">
                   <div className="flex items-center gap-2 justify-end">
                     <Link
                       to={`/clients/${c.id}`}
@@ -232,6 +338,13 @@ export default function Clients() {
                     >
                       <ListFilter className="w-4 h-4" />
                     </Link>
+                    <button
+                      onClick={() => openFollowUp(c)}
+                      className="text-navy-700 hover:bg-navy-50 p-1.5 rounded"
+                      title="متابعة العميل"
+                    >
+                      <CalendarClock className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => window.open(`tel:${c.phone}`, '_blank')}
                       className="text-navy-700 hover:bg-navy-50 p-1.5 rounded"
@@ -259,7 +372,7 @@ export default function Clients() {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center">
+                <td colSpan={9} className="px-4 py-12 text-center">
                   <div className="text-gray-400 mb-2">
                     <Users className="w-12 h-12 mx-auto" />
                   </div>
@@ -419,12 +532,104 @@ export default function Clients() {
               <textarea rows={2} className={inputCls} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </div>
           </div>
+          <div className="mt-6 mb-3 flex items-center gap-2 border-t border-gray-100 pt-5">
+            <CalendarClock className="w-5 h-5 text-gold-600" />
+            <h3 className="font-bold">المتابعة</h3>
+            <span className="text-xs text-gray-400">اختياري — حدد موعداً وحالة للمتابعة</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>حالة المتابعة</label>
+              <select
+                className={inputCls}
+                value={form.followUpStatus}
+                onChange={(e) => setForm({ ...form, followUpStatus: e.target.value as ClientInput['followUpStatus'] })}
+              >
+                {Object.entries(FOLLOWUP_STATUS_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>تاريخ المتابعة التالية</label>
+              <input
+                type="date"
+                className={inputCls}
+                value={form.followUpDate}
+                onChange={(e) => setForm({ ...form, followUpDate: e.target.value })}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className={labelCls}>ملاحظة المتابعة</label>
+              <input
+                className={inputCls}
+                value={form.followUpNote}
+                onChange={(e) => setForm({ ...form, followUpNote: e.target.value })}
+                placeholder="مثال: تم التواصل وتحديد معاينة يوم السبت"
+              />
+            </div>
+          </div>
           <div className="flex justify-end gap-3 mt-6">
             <button onClick={() => { setCreating(false); setEditing(null) }} className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
               إلغاء
             </button>
             <button onClick={save} className="bg-navy-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-navy-900">
               حفظ
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {followupClient && (
+        <Modal title={`متابعة: ${followupClient.name}`} onClose={() => setFollowupClient(null)}>
+          <div className="mb-4">
+            <div className={labelCls}>حالة المتابعة</div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(FOLLOWUP_STATUS_LABELS).map(([k, v]) => (
+                <button
+                  key={k}
+                  onClick={() => setFollowupForm((f) => ({ ...f, status: k as FollowUpStatus }))}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    followupForm.status === k
+                      ? FOLLOWUP_STATUS_COLORS[k]
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className={labelCls}>تاريخ المتابعة التالية</label>
+            <input
+              type="date"
+              className={inputCls}
+              value={followupForm.date}
+              onChange={(e) => setFollowupForm((f) => ({ ...f, date: e.target.value }))}
+            />
+          </div>
+          <div className="mb-4">
+            <label className={labelCls}>ملاحظة المتابعة</label>
+            <textarea
+              rows={2}
+              className={inputCls}
+              value={followupForm.note}
+              onChange={(e) => setFollowupForm((f) => ({ ...f, note: e.target.value }))}
+              placeholder="مثال: تم التواصل وتحديد معاينة يوم السبت"
+            />
+          </div>
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setFollowupClient(null)} className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+              إلغاء
+            </button>
+            <button
+              onClick={saveFollowUp}
+              className="flex items-center gap-2 bg-navy-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-navy-900"
+            >
+              <CheckCheck className="w-4 h-4" /> حفظ المتابعة
             </button>
           </div>
         </Modal>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Search, Plus, GitCompare, Filter, Building2 } from 'lucide-react'
-import type { Property, PropertyType } from '@shared/types'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Search, Plus, GitCompare, Filter, Building2, X } from 'lucide-react'
+import type { Property, PropertyType, PropertyStatus } from '@shared/types'
 import PropertyCard from '../components/PropertyCard'
 import CompareModal from '../components/CompareModal'
 import { STATUS_LABELS } from '../lib/constants'
@@ -16,7 +16,18 @@ const EMPTY_FILTERS = {
   query: ''
 }
 
+const CHIP_LABELS: Record<string, string> = {
+  type: 'النوع',
+  zone: 'المنطقة',
+  status: 'الحالة',
+  maxPrice: 'أقصى سعر',
+  minArea: 'مساحة من',
+  maxArea: 'مساحة إلى',
+  query: 'بحث'
+}
+
 export default function Properties() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [types, setTypes] = useState<PropertyType[]>([])
   const [properties, setProperties] = useState<Property[]>([])
   const [filters, setFilters] = useState(EMPTY_FILTERS)
@@ -26,8 +37,22 @@ export default function Properties() {
 
   useEffect(() => {
     window.api.types.list().then(setTypes)
-    runSearch(EMPTY_FILTERS)
   }, [])
+
+  useEffect(() => {
+    const initial = {
+      type: searchParams.get('type') ?? '',
+      zone: searchParams.get('zone') ?? '',
+      status: searchParams.get('status') ?? '',
+      maxPrice: searchParams.get('maxPrice') ?? '',
+      minArea: searchParams.get('minArea') ?? '',
+      maxArea: searchParams.get('maxArea') ?? '',
+      query: searchParams.get('query') ?? ''
+    }
+    setFilters(initial)
+    runSearch(initial)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   function runSearch(f: typeof EMPTY_FILTERS) {
     window.api.properties
@@ -154,6 +179,7 @@ export default function Properties() {
             onClick={() => {
               setFilters(EMPTY_FILTERS)
               runSearch(EMPTY_FILTERS)
+              setSearchParams({})
             }}
             className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50"
           >
@@ -161,6 +187,49 @@ export default function Properties() {
           </button>
         </div>
       </div>
+
+      {(Object.entries(filters) as [string, string][]).some(([, v]) => v) && (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <span className="text-sm text-gray-500">العرض المفلتر:</span>
+          {(Object.entries(filters) as [string, string][])
+            .filter(([, v]) => v)
+            .map(([key, value]) => {
+              const display = key === 'status' ? (STATUS_LABELS[value as PropertyStatus] ?? value) : value
+              return (
+                <span
+                  key={key}
+                  className="inline-flex items-center gap-1.5 bg-navy-800 text-white text-xs px-3 py-1 rounded-full"
+                >
+                  {CHIP_LABELS[key]}: {display}
+                  <button
+                    onClick={() => {
+                      const next = { ...filters, [key]: '' }
+                      setFilters(next)
+                      runSearch(next)
+                      const params = new URLSearchParams(searchParams)
+                      params.delete(key)
+                      setSearchParams(params)
+                    }}
+                    className="hover:text-gold-300"
+                    title="إزالة الفلتر"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )
+            })}
+          <button
+            onClick={() => {
+              setFilters(EMPTY_FILTERS)
+              runSearch(EMPTY_FILTERS)
+              setSearchParams({})
+            }}
+            className="text-xs text-navy-700 hover:underline"
+          >
+            مسح الكل
+          </button>
+        </div>
+      )}
 
       {properties.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl shadow-sm">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom'
 import { Save, ArrowRight, Upload, FileText, Trash2, AlertTriangle, X } from 'lucide-react'
 import LocationEditor from '../components/LocationEditor'
 import type {
@@ -51,6 +51,7 @@ const EMPTY_FORM: PropertyInput = {
 
 export default function PropertyForm() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
   const isEdit = Boolean(id)
   const navigate = useNavigate()
 
@@ -65,6 +66,14 @@ export default function PropertyForm() {
   const [duplicateWarning, setDuplicateWarning] = useState<DuplicateCheck | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!isEdit) {
+      const t = searchParams.get('type')
+      if (t) setForm((f) => ({ ...f, type: t }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, isEdit])
 
   useEffect(() => {
     window.api.types.list().then(setTypes)

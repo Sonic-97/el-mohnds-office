@@ -8,8 +8,13 @@ import Clients from './pages/Clients'
 import ClientDetail from './pages/ClientDetail'
 import Matches from './pages/Matches'
 import MapPage from './pages/MapPage'
+import ZagazigMap from './pages/ZagazigMap'
 import Settings from './pages/Settings'
 import Market from './pages/Market'
+import MaterialsPage from './pages/MaterialsPage'
+import CalculatorsPage from './pages/CalculatorsPage'
+import CommissionsPage from './pages/CommissionsPage'
+import DemandPage from './pages/DemandPage'
 
 export default function App() {
   return (
@@ -24,7 +29,12 @@ export default function App() {
         <Route path="clients/:id" element={<ClientDetail />} />
         <Route path="matches" element={<Matches />} />
         <Route path="map" element={<MapPage />} />
+        <Route path="zagazig" element={<ZagazigMap />} />
         <Route path="market" element={<Market />} />
+        <Route path="materials" element={<MaterialsPage />} />
+        <Route path="calc" element={<CalculatorsPage />} />
+        <Route path="commissions" element={<CommissionsPage />} />
+        <Route path="demand" element={<DemandPage />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

@@ -14,11 +14,16 @@ import type {
   AreaStat,
   SettingsMap,
   DashboardStats,
+  AttentionItem,
   MarketAreaInput,
   ConstructionCostInput,
   OfficeZoneStat,
   Client,
-  Property
+  Property,
+  CommissionInput,
+  DemandAnalytics,
+  FollowUpStats,
+  ConstructionMaterialInput
 } from '@shared/types'
 import { getDb } from './db'
 import {
@@ -27,6 +32,15 @@ import {
   computeMatchOpportunities,
   getBudgetTolerancePercent
 } from './matching'
+import { getZagazigPoiData, listMapAreas, saveMapArea, deleteMapArea } from './zmap'
+import { listMaterials, saveMaterial, deleteMaterial, refreshMaterials } from './materials'
+import {
+  listCommissions,
+  createCommission,
+  updateCommission,
+  deleteCommission,
+  commissionSummary
+} from './commissions'
 
 function computePricePerMeter(price: number | null, area: number | null): number | null {
   if (price != null && area != null && area > 0) return Math.round((price / area) * 100) / 100
@@ -267,9 +281,170 @@ export function registerIpc(): void {
       totalApartments: one("SELECT COUNT(*) AS c FROM properties WHERE type = 'شقة'"),
       totalClients: one('SELECT COUNT(*) AS c FROM clients'),
       available: one("SELECT COUNT(*) AS c FROM properties WHERE status = 'available'"),
-      sold: one("SELECT COUNT(*) AS c FROM properties WHERE status = 'sold'")
+      sold: one("SELECT COUNT(*) AS c FROM properties WHERE status = 'sold'"),
+      reserved: one("SELECT COUNT(*) AS c FROM properties WHERE status = 'reserved'"),
+      rented: one("SELECT COUNT(*) AS c FROM properties WHERE status = 'rented'")
     }
     return stats
+  })
+
+  ipcMain.handle('stats:attention', () => {
+    const db = getDb()
+    const props = db
+      .prepare(
+        `SELECT p.*, (SELECT COUNT(*) FROM property_files pf WHERE pf.propertyId = p.id AND pf.kind = 'image') AS imageCount
+         FROM properties p ORDER BY p.createdAt DESC`
+      )
+      .all() as (Property & { imageCount: number })[]
+    const clients = db.prepare('SELECT * FROM clients ORDER BY createdAt DESC').all() as Client[]
+    const items: AttentionItem[] = []
+    for (const p of props) {
+      if (p.status !== 'sold' && p.imageCount === 0) {
+        items.push({ kind: 'noImage', entityType: 'property', entityId: p.id, title: p.name, subtitle: 'بدون صور' })
+      }
+      if (p.latitude == null && p.longitude == null && !p.mapsUrl) {
+        items.push({ kind: 'noLocation', entityType: 'property', entityId: p.id, title: p.name, subtitle: 'بدون موقع على الخريطة' })
+      }
+      if (p.price == null || p.area == null) {
+        items.push({ kind: 'noPricing', entityType: 'property', entityId: p.id, title: p.name, subtitle: 'السعر أو المساحة ناقصة' })
+      }
+      if (!p.ownerPhone) {
+        items.push({ kind: 'noOwner', entityType: 'property', entityId: p.id, title: p.name, subtitle: 'بدون رقم هاتف المالك' })
+      }
+    }
+    for (const c of clients) {
+      if (!c.phone) {
+        items.push({ kind: 'noPhone', entityType: 'client', entityId: c.id, title: c.name, subtitle: 'بدون رقم هاتف' })
+      }
+    }
+    return items.slice(0, 15)
+  })
+
+  ipcMain.handle('stats:demand', () => {
+    const db = getDb()
+    const clients = db.prepare('SELECT * FROM clients').all() as Client[]
+    const hasReq = (c: Client): boolean =>
+      Boolean(c.type || c.preferredType || c.area || c.preferredArea || c.neighborhood || c.city) ||
+      c.budgetFrom != null ||
+      c.budgetTo != null ||
+      c.budget != null ||
+      c.areaFrom != null ||
+      c.areaTo != null ||
+      c.preferredAreaSize != null
+    const withRequirements = clients.filter(hasReq)
+
+    const countBy = (labels: (string | null | undefined)[]): DemandAnalytics['topTypes'] => {
+      const m = new Map<string, number>()
+      for (const v of labels) {
+        const k = (v ?? '').trim()
+        if (k) m.set(k, (m.get(k) ?? 0) + 1)
+      }
+      return Array.from(m.entries())
+        .map(([label, count]) => ({ label, count }))
+        .sort((a, b) => b.count - a.count)
+    }
+
+    const topTypes = countBy(withRequirements.map((c) => c.type || c.preferredType))
+    const topAreas = countBy(withRequirements.map((c) => c.area || c.preferredArea || c.neighborhood || c.city))
+
+    const ranges: { max: number | null; label: string }[] = [
+      { max: 1000000, label: 'أقل من 1 مليون' },
+      { max: 2000000, label: '1 – 2 مليون' },
+      { max: 3000000, label: '2 – 3 مليون' },
+      { max: 5000000, label: '3 – 5 مليون' },
+      { max: null, label: 'أكثر من 5 مليون' }
+    ]
+    const budgetMap = new Map<string, number>()
+    for (const c of withRequirements) {
+      const pt = c.budgetTo ?? c.budget ?? c.budgetFrom
+      if (pt == null) continue
+      const r = ranges.find((x) => x.max == null || pt <= x.max)
+      if (r) budgetMap.set(r.label, (budgetMap.get(r.label) ?? 0) + 1)
+    }
+    const budgetRanges = Array.from(budgetMap.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+
+    const areas: number[] = []
+    for (const c of withRequirements) {
+      if (c.areaTo) areas.push(c.areaTo)
+      else if (c.areaFrom) areas.push(c.areaFrom)
+      else if (c.preferredAreaSize) areas.push(c.preferredAreaSize)
+    }
+    const avgArea = areas.length ? Math.round(areas.reduce((a, b) => a + b, 0) / areas.length) : null
+    const buyersByType = countBy(
+      withRequirements.filter((c) => c.role !== 'seller').map((c) => c.type || c.preferredType)
+    )
+
+    const analytics: DemandAnalytics = {
+      totalClients: clients.length,
+      withRequirements: withRequirements.length,
+      enoughData: withRequirements.length >= 1,
+      topTypes,
+      topAreas,
+      budgetRanges,
+      avgArea,
+      buyersByType
+    }
+    return analytics
+  })
+
+  ipcMain.handle('stats:followups', () => {
+    const rows = getDb()
+      .prepare('SELECT followUpDate, followUpStatus FROM clients')
+      .all() as { followUpDate: string; followUpStatus: string }[]
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    let dueToday = 0
+    let overdue = 0
+    let upcoming = 0
+    for (const r of rows) {
+      if (!r.followUpDate || r.followUpStatus === 'closed') continue
+      const d = new Date(r.followUpDate + 'T00:00:00')
+      d.setHours(0, 0, 0, 0)
+      if (isNaN(d.getTime())) continue
+      if (d.getTime() < today.getTime()) overdue++
+      else if (d.getTime() === today.getTime()) dueToday++
+      else upcoming++
+    }
+    const out: FollowUpStats = { dueToday, overdue, upcoming }
+    return out
+  })
+
+  ipcMain.handle('materials:list', () => {
+    return listMaterials()
+  })
+
+  ipcMain.handle('materials:save', (_e, input: ConstructionMaterialInput) => {
+    return saveMaterial(input)
+  })
+
+  ipcMain.handle('materials:delete', (_e, id: number) => {
+    return deleteMaterial(id)
+  })
+
+  ipcMain.handle('materials:refresh', () => {
+    return refreshMaterials()
+  })
+
+  ipcMain.handle('commissions:list', () => {
+    return listCommissions()
+  })
+
+  ipcMain.handle('commissions:create', (_e, input: CommissionInput) => {
+    return createCommission(input)
+  })
+
+  ipcMain.handle('commissions:update', (_e, id: number, input: CommissionInput) => {
+    return updateCommission(id, input)
+  })
+
+  ipcMain.handle('commissions:delete', (_e, id: number) => {
+    return deleteCommission(id)
+  })
+
+  ipcMain.handle('commissions:summary', () => {
+    return commissionSummary()
   })
 
   ipcMain.handle('stats:areaAverages', () => {
@@ -328,10 +503,12 @@ export function registerIpc(): void {
       .prepare(
         `INSERT INTO clients (name, phone, role, budget, preferredArea, preferredType,
           preferredAreaSize, seriousness, notes, type, area, requestType, governorate, city, center,
-          neighborhood, budgetFrom, budgetTo, areaFrom, areaTo, desiredStatus)
+          neighborhood, budgetFrom, budgetTo, areaFrom, areaTo, desiredStatus,
+          followUpDate, followUpNote, followUpStatus)
          VALUES (@name, @phone, @role, @budget, @preferredArea, @preferredType,
           @preferredAreaSize, @seriousness, @notes, @type, @area, @requestType, @governorate, @city, @center,
-          @neighborhood, @budgetFrom, @budgetTo, @areaFrom, @areaTo, @desiredStatus)`
+          @neighborhood, @budgetFrom, @budgetTo, @areaFrom, @areaTo, @desiredStatus,
+          @followUpDate, @followUpNote, @followUpStatus)`
       )
       .run(input)
     return getDb().prepare('SELECT * FROM clients WHERE id = ?').get(res.lastInsertRowid)
@@ -347,6 +524,7 @@ export function registerIpc(): void {
         city = @city, center = @center, neighborhood = @neighborhood,
         budgetFrom = @budgetFrom, budgetTo = @budgetTo,
         areaFrom = @areaFrom, areaTo = @areaTo, desiredStatus = @desiredStatus,
+        followUpDate = @followUpDate, followUpNote = @followUpNote, followUpStatus = @followUpStatus,
         updatedAt = datetime('now') WHERE id = @id`
     ).run({ ...input, id })
     return db.prepare('SELECT * FROM clients WHERE id = ?').get(id)
@@ -441,6 +619,7 @@ export function registerIpc(): void {
         `UPDATE market_areas SET
           landMin=@landMin, landAvg=@landAvg, landMax=@landMax, landCount=@landCount, landDataType=@landDataType,
           aptMin=@aptMin, aptAvg=@aptAvg, aptMax=@aptMax, aptCount=@aptCount, aptDataType=@aptDataType,
+          rentMin=@rentMin, rentAvg=@rentAvg, rentMax=@rentMax, rentCount=@rentCount, rentDataType=@rentDataType,
           sourceName=@sourceName, sourceUrl=@sourceUrl, sourceDate=@sourceDate, notes=@notes,
           updatedAt=datetime('now') WHERE area=@area`
       ).run(params)
@@ -449,9 +628,13 @@ export function registerIpc(): void {
     const res = db
       .prepare(
         `INSERT INTO market_areas
-          (area, landMin, landAvg, landMax, landCount, landDataType, aptMin, aptAvg, aptMax, aptCount, aptDataType, sourceName, sourceUrl, sourceDate, notes)
+          (area, landMin, landAvg, landMax, landCount, landDataType, aptMin, aptAvg, aptMax, aptCount, aptDataType,
+           rentMin, rentAvg, rentMax, rentCount, rentDataType,
+           sourceName, sourceUrl, sourceDate, notes)
          VALUES
-          (@area, @landMin, @landAvg, @landMax, @landCount, @landDataType, @aptMin, @aptAvg, @aptMax, @aptCount, @aptDataType, @sourceName, @sourceUrl, @sourceDate, @notes)`
+          (@area, @landMin, @landAvg, @landMax, @landCount, @landDataType, @aptMin, @aptAvg, @aptMax, @aptCount, @aptDataType,
+           @rentMin, @rentAvg, @rentMax, @rentCount, @rentDataType,
+           @sourceName, @sourceUrl, @sourceDate, @notes)`
       )
       .run(params)
     return db.prepare('SELECT * FROM market_areas WHERE id = ?').get(res.lastInsertRowid)
@@ -558,5 +741,21 @@ export function registerIpc(): void {
     const dest = brandingFile(kind)
     if (existsSync(dest)) unlinkSync(dest)
     return true
+  })
+
+  ipcMain.handle('zmap:getPoiData', (_e, force?: boolean) => {
+    return getZagazigPoiData(force === true)
+  })
+
+  ipcMain.handle('zmap:listAreas', () => {
+    return listMapAreas()
+  })
+
+  ipcMain.handle('zmap:saveArea', (_e, input: import('@shared/types').MapAreaInput) => {
+    return saveMapArea(input)
+  })
+
+  ipcMain.handle('zmap:deleteArea', (_e, id: number) => {
+    return deleteMapArea(id)
   })
 }

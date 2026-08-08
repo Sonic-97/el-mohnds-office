@@ -17,7 +17,8 @@ import {
   User as UserIcon,
   StickyNote,
   Users,
-  MessageCircle
+  MessageCircle,
+  Coins
 } from 'lucide-react'
 import type { PropertyDetail, PropertyFile, ClientMatch } from '@shared/types'
 import {
@@ -31,6 +32,7 @@ import {
   SERIOUSNESS_COLORS
 } from '../lib/constants'
 import { ScoreBadge, MatchReasons } from '../components/MatchScore'
+import PropertyLocationContext from '../components/zagazig/PropertyLocationContext'
 
 export default function PropertyDetail() {
   const { id } = useParams()
@@ -116,6 +118,14 @@ export default function PropertyDetail() {
             {clientMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             {clientMode ? 'وضع المكتب' : 'وضع العميل'}
           </button>
+          {(p.status === 'sold' || p.status === 'rented') && (
+            <Link
+              to={`/commissions?property=${p.id}`}
+              className="flex items-center gap-2 bg-navy-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-navy-900"
+            >
+              <Coins className="w-4 h-4" /> تسجيل عمولة
+            </Link>
+          )}
           <button
             onClick={shareWhatsApp}
             className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700"
@@ -156,6 +166,10 @@ export default function PropertyDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          {p.latitude != null && p.longitude != null && (
+            <PropertyLocationContext property={p} />
+          )}
+
           {images.length > 0 ? (
             <div className="bg-white rounded-xl shadow-sm p-4">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">

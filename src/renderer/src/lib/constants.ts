@@ -33,6 +33,24 @@ export const ROLE_LABELS: Record<string, string> = {
   buyer: 'مشتري'
 }
 
+export const FOLLOWUP_STATUS_LABELS: Record<string, string> = {
+  new: 'جديد',
+  contacted: 'تم التواصل',
+  interested: 'مهتم',
+  viewing: 'معاينة',
+  negotiating: 'تفاوض',
+  closed: 'مغلق'
+}
+
+export const FOLLOWUP_STATUS_COLORS: Record<string, string> = {
+  new: 'bg-gray-100 text-gray-700',
+  contacted: 'bg-blue-100 text-blue-800',
+  interested: 'bg-violet-100 text-violet-800',
+  viewing: 'bg-amber-100 text-amber-800',
+  negotiating: 'bg-orange-100 text-orange-800',
+  closed: 'bg-gray-200 text-gray-500'
+}
+
 export const DOC_TYPES = ['عقد', 'ملكية', 'رخصة', 'مرافق', 'مستندات أخرى']
 
 export const FACING_OPTIONS = ['شمالية', 'جنوبية', 'شرقية', 'غربية', 'شمالية شرقية', 'شمالية غربية', 'جنوبية شرقية', 'جنوبية غربية', 'بحرية', 'نيلية']

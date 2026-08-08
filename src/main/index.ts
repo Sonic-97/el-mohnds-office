@@ -3,6 +3,7 @@ import { join } from 'path'
 import { existsSync } from 'fs'
 import { registerIpc } from './ipc'
 import { getDb } from './db'
+import { tryAutoUpdateMaterials } from './materials'
 
 function resolveIcon(): string | undefined {
   const brandingLogo = join(app.getPath('userData'), 'branding', 'logo.png')
@@ -55,6 +56,8 @@ app.whenReady().then(() => {
   getDb()
   registerIpc()
   createWindow()
+
+  tryAutoUpdateMaterials()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

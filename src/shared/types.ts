@@ -46,6 +46,8 @@ export interface PropertyFile {
 
 export type ClientRequestType = 'buy' | 'rent'
 
+export type FollowUpStatus = 'new' | 'contacted' | 'interested' | 'viewing' | 'negotiating' | 'closed'
+
 export interface ClientRequirements {
   requestType: ClientRequestType | ''
   type: string
@@ -87,6 +89,9 @@ export interface Client {
   areaFrom: number | null
   areaTo: number | null
   desiredStatus: PropertyStatus | ''
+  followUpDate: string
+  followUpNote: string
+  followUpStatus: FollowUpStatus
 }
 
 export type ClientInput = Omit<Client, 'id' | 'createdAt' | 'updatedAt'>
@@ -125,6 +130,16 @@ export interface DashboardStats {
   totalClients: number
   available: number
   sold: number
+  reserved: number
+  rented: number
+}
+
+export interface AttentionItem {
+  kind: string
+  entityType: 'property' | 'client'
+  entityId: number
+  title: string
+  subtitle: string
 }
 
 export interface DuplicateCheck {
@@ -181,6 +196,11 @@ export interface MarketArea {
   aptMax: number | null
   aptCount: number
   aptDataType: MarketDataType
+  rentMin: number | null
+  rentAvg: number | null
+  rentMax: number | null
+  rentCount: number
+  rentDataType: MarketDataType
   sourceName: string
   sourceUrl: string
   sourceDate: string
@@ -189,6 +209,84 @@ export interface MarketArea {
 }
 
 export type MarketAreaInput = Omit<MarketArea, 'id' | 'updatedAt'>
+
+export type ZagazigPoiCategory =
+  | 'hospital'
+  | 'clinic'
+  | 'pharmacy'
+  | 'university'
+  | 'school'
+  | 'bank'
+  | 'government'
+  | 'park'
+  | 'shopping'
+  | 'market'
+  | 'food'
+  | 'transport'
+
+export interface ZagazigPoi {
+  id: string
+  category: ZagazigPoiCategory
+  name: string
+  lat: number
+  lon: number
+}
+
+export type ZagazigRoadKind = 'main' | 'important'
+
+export interface ZagazigRoad {
+  id: string
+  kind: ZagazigRoadKind
+  name?: string
+  points: { lat: number; lon: number }[]
+}
+
+export interface ZagazigPoiData {
+  pois: ZagazigPoi[]
+  roads: ZagazigRoad[]
+  fetchedAt: string | null
+  error?: string
+}
+
+export interface MapArea {
+  id: number
+  name: string
+  color: string
+  points: { lat: number; lon: number }[]
+  notes: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MapAreaInput {
+  id?: number
+  name: string
+  color: string
+  points: { lat: number; lon: number }[]
+  notes: string
+}
+
+export interface OfficeAreaStat {
+  zone: string
+  count: number
+  landCount: number
+  aptCount: number
+  min: number | null
+  avg: number | null
+  median: number | null
+  max: number | null
+  rentMin: number | null
+  rentAvg: number | null
+  rentMax: number | null
+}
+
+export interface ZagazigAreaProfile {
+  name: string
+  market: MarketArea | null
+  office: OfficeAreaStat | null
+  clientCount: number
+  matchOpportunities: number
+}
 
 export interface ConstructionCost {
   id: number
@@ -247,4 +345,74 @@ export interface PropertyMatchSummary {
   property: Property
   clientCount: number
   topScore: number | null
+}
+
+export interface ConstructionMaterial {
+  id: number
+  name: string
+  unit: string
+  price: number | null
+  previousPrice: number | null
+  source: string
+  sourceUrl: string
+  notes: string
+  updatedAt: string
+}
+
+export type ConstructionMaterialInput = Omit<ConstructionMaterial, 'id' | 'updatedAt'>
+
+export interface MaterialRefreshResult {
+  ok: boolean
+  message: string
+  updated: number
+}
+
+export type CommissionType = 'percent' | 'fixed'
+
+export interface Commission {
+  id: number
+  propertyId: number
+  propertyName: string
+  finalPrice: number
+  cType: CommissionType
+  rate: number
+  amount: number
+  received: number
+  date: string
+  notes: string
+  createdAt: string
+}
+
+export type CommissionInput = Omit<Commission, 'id' | 'createdAt' | 'propertyName'>
+
+export interface CommissionSummary {
+  monthExpected: number
+  monthReceived: number
+  monthOutstanding: number
+  totalExpected: number
+  totalReceived: number
+  totalOutstanding: number
+  count: number
+}
+
+export interface DemandItem {
+  label: string
+  count: number
+}
+
+export interface DemandAnalytics {
+  totalClients: number
+  withRequirements: number
+  enoughData: boolean
+  topTypes: DemandItem[]
+  topAreas: DemandItem[]
+  budgetRanges: DemandItem[]
+  avgArea: number | null
+  buyersByType: DemandItem[]
+}
+
+export interface FollowUpStats {
+  dueToday: number
+  overdue: number
+  upcoming: number
 }
